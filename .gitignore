@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.idea/
+.pytest_cache/
+.env
+storage/
+chroma_data/
+logs/
+*.log
+backups/
+evaluation/__pycache__/
+.tmp_*/
+*.tmp
+*.bak

@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<!--
+  视觉设计参考自 v0 开源模板 Optimus（MIT License）
+  来源: https://github.com/j1angsang/optimus-the-ai-platform-to-bu-mn
+  底座是文件存储服务，上层是企业内部知识库
+  核心价值在后端：流式上传/秒传/分片续传/JWT/部门分级/审核流/向量检索
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>企业知识库 · 知识沉淀与检索</title>
+<link rel="stylesheet" href="/vendor/fonts.css">
+<style>
+  :root {
+    --background: #ffffff;
+    --foreground: #161616;
+    --card: #ffffff;
+    --muted: #7c7c7c;
+    --faint: #9a9a9a;
+    --border: #e8e8e8;
+    --green: #22c55e;
+    --font-display: "Instrument Sans", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --font-serif: "Instrument Serif", Georgia, serif;
+    --font-mono: "JetBrains Mono", "Cascadia Mono", Consolas, monospace;
+  }
+  .font-display { font-family: var(--font-display); }
+  .font-serif { font-family: var(--font-serif); }
+  .font-mono { font-family: var(--font-mono); }
+  .tracking-tight { letter-spacing: -0.02em; }
+  .text-muted-foreground { color: var(--muted); }
+  .bg-background { background: var(--background); }
+  .bg-foreground { background: var(--foreground); }
+  .border-foreground\/10 { border-color: rgba(22,22,22,.1); }
+  .border-foreground\/20 { border-color: rgba(22,22,22,.2); }
+  .bg-foreground\/5 { background: rgba(22,22,22,.05); }
+  .bg-foreground\/10 { background: rgba(22,22,22,.1); }
+  .bg-foreground\/20 { background: rgba(22,22,22,.2); }
+  .bg-foreground\/30 { background: rgba(22,22,22,.3); }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--background); color: var(--foreground);
+    font-family: var(--font-display); font-size: 15px; line-height: 1.6;
+    -webkit-font-smoothing: antialiased; overflow-x: hidden;
+  }
+  ::selection { background: rgba(22,22,22,.12); }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; }
+  img, canvas { display: block; }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    border-radius: 999px; font-size: 15px; font-weight: 500;
+    transition: all .2s; white-space: nowrap; border: none;
+  }
+  .btn-lg { padding: 0 32px; height: 56px; font-size: 16px; }
+  .btn-sm { padding: 0 18px; height: 36px; font-size: 14px; }
+  .btn-dark { background: var(--foreground); color: var(--background); }
+  .btn-dark:hover { background: rgba(22,22,22,.9); }
+  .btn-outline { background: transparent; border: 1px solid rgba(22,22,22,.2); }
+  .btn-outline:hover { background: rgba(22,22,22,.05); }
+  .btn .arr { transition: transform .2s; }
+  .btn:hover .arr { transform: translateX(3px); }
+
+  .nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: all .5s; }
+  .nav-inner {
+    max-width: 1400px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 80px; transition: all .5s;
+  }
+  .nav.scrolled .nav-inner {
+    margin-top: 16px; height: 56px; max-width: 1200px;
+    background: rgba(255,255,255,.75); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.08);
+  }
+  .nav-logo { display: flex; align-items: baseline; gap: 4px; }
+  .nav-logo .name { font-size: 22px; font-weight: 600; letter-spacing: -0.4px; }
+  .nav-logo .tm { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .nav-links { display: flex; gap: 48px; }
+  .nav-links a { font-size: 14px; color: rgba(22,22,22,.7); transition: color .3s; position: relative; }
+  .nav-links a::after { content: ""; position: absolute; left: 0; bottom: -4px; width: 0; height: 1px; background: var(--foreground); transition: width .3s; }
+  .nav-links a:hover { color: var(--foreground); }
+  .nav-links a:hover::after { width: 100%; }
+  .nav-right { display: flex; align-items: center; gap: 16px; font-size: 14px; }
+  .nav-right .who { color: var(--muted); font-size: 13px; }
+  .nav-right .who b { color: var(--foreground); font-weight: 600; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+  .dot.on { background: var(--green); animation: pulse 2s infinite; }
+  .dot.off { background: #d64545; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .4; } }
+
+  .eyebrow { display: inline-flex; align-items: center; gap: 12px; font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+  .eyebrow::before { content: ""; width: 32px; height: 1px; background: rgba(22,22,22,.3); }
+
+  /* ========== CTA = 登录 ========== */
+  .cta-wrap { padding: 96px 32px; }
+  .cta-box { position: relative; border: 1px solid var(--foreground); transition: all 1s; }
+  .cta-spot { position: absolute; inset: 0; opacity: .1; pointer-events: none; }
+  .cta-inner { position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 48px; padding: 64px 96px; }
+  .cta-left { flex: 1; }
+  .cta-left h2 { font-size: clamp(2.5rem, 6vw, 4.5rem); font-weight: 600; letter-spacing: -0.03em; line-height: .95; margin-bottom: 32px; }
+  .cta-left p { font-size: 20px; color: var(--muted); margin-bottom: 20px; }
+  .cta-note { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin-top: 32px; }
+  .login-tabs { display: inline-flex; gap: 2px; background: rgba(22,22,22,.06); border-radius: 999px; padding: 4px; margin-bottom: 18px; }
+  .login-tabs button { border: none; background: transparent; border-radius: 999px; padding: 8px 26px; font-size: 14px; color: var(--muted); transition: all .2s; }
+  .login-tabs button.on { background: var(--background); color: var(--foreground); box-shadow: 0 1px 6px rgba(0,0,0,.1); }
+  .login-fields .field { margin-bottom: 14px; }
+  .login-fields label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 6px; }
+  .login-fields input, .login-fields select {
+    width: 100%; border: 1px solid rgba(22,22,22,.2); border-radius: 10px; padding: 11px 14px;
+    font-size: 15px; font-family: var(--font-display); background: var(--background); color: var(--foreground); outline: none; transition: border-color .2s;
+  }
+  .login-fields input:focus, .login-fields select:focus { border-color: var(--foreground); }
+  .login-fields .btn { width: 100%; margin-top: 10px; }
+  .cta-tetra { display: none; }
+  @media (min-width: 1024px) { .cta-tetra { display: flex; width: 500px; height: 500px; margin-right: -64px; align-items: center; justify-content: center; } }
+  .cta-corner { position: absolute; width: 128px; height: 128px; pointer-events: none; }
+  .cta-corner.tl { top: 0; right: 0; border-bottom: 1px solid rgba(22,22,22,.1); border-left: 1px solid rgba(22,22,22,.1); }
+  .cta-corner.br { bottom: 0; left: 0; border-top: 1px solid rgba(22,22,22,.1); border-right: 1px solid rgba(22,22,22,.1); }
+
+  /* ========== HERO ========== */
+  .hero { position: relative; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; overflow: hidden; }
+  .hero-sphere { position: absolute; right: -40px; top: 50%; transform: translateY(-50%); width: 600px; height: 600px; opacity: .4; pointer-events: none; }
+  .hero-grid { position: absolute; inset: 0; opacity: .3; pointer-events: none; }
+  .hero-content { position: relative; z-index: 10; max-width: 1400px; margin: 0 auto; padding: 128px 32px 0; }
+  .hero-eyebrow { margin-bottom: 32px; opacity: 0; transform: translateY(16px); transition: all .7s; }
+  .hero.in .hero-eyebrow { opacity: 1; transform: none; }
+  .hero-title { font-size: clamp(3rem, 12vw, 10rem); line-height: .9; letter-spacing: -0.03em; font-weight: 600; margin-bottom: 48px; opacity: 0; transform: translateY(32px); transition: all 1s; }
+  .hero.in .hero-title { opacity: 1; transform: none; }
+  .hero-title .block { display: block; }
+  .word-inline { position: relative; display: inline-block; }
+  .char-in { display: inline-block; animation: charIn .4s cubic-bezier(.22,1,.36,1) both; }
+  @keyframes charIn { from { opacity: 0; transform: translateY(12px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+  .word-underline { position: absolute; bottom: -8px; left: 0; right: 0; height: 12px; background: rgba(22,22,22,.1); }
+  .hero-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 48px 96px; align-items: end; opacity: 0; transform: translateY(16px); transition: all .7s .2s; }
+  .hero.in .hero-bottom { opacity: 1; transform: none; }
+  .hero-desc { font-size: 22px; color: var(--muted); line-height: 1.5; max-width: 560px; }
+  .hero-ctas { display: flex; flex-wrap: wrap; gap: 16px; }
+
+  section { position: relative; }
+  .sec { max-width: 1400px; margin: 0 auto; padding: 96px 32px; }
+  .sec-head { margin-bottom: 64px; }
+  .sec-head .eyebrow { margin-bottom: 24px; }
+  .sec-title { font-size: clamp(2.5rem, 6vw, 4rem); letter-spacing: -0.03em; font-weight: 600; line-height: 1.05; }
+  .sec-title .dim { color: var(--muted); }
+  .reveal { opacity: 0; transition: all .7s; }
+  .reveal.in { opacity: 1; transform: none; }
+  .reveal-y { transform: translateY(16px); }
+  .reveal-x { transform: translateX(48px); }
+
+  /* ========== 特性区 ========== */
+  .feature-row { display: flex; gap: 32px 64px; padding: 48px 0; border-bottom: 1px solid rgba(22,22,22,.1); }
+  .feature-row:last-child { border-bottom: none; }
+  .feature-no { font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+  .feature-body { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center; }
+  .feature-title { font-size: clamp(1.8rem, 3.5vw, 2.4rem); font-weight: 600; letter-spacing: -0.02em; margin-bottom: 16px; transition: transform .5s; }
+  .feature-row:hover .feature-title { transform: translateX(8px); }
+  .feature-desc { font-size: 18px; color: var(--muted); line-height: 1.6; }
+  .feature-visual { display: flex; justify-content: flex-end; }
+  .feature-visual svg { width: 192px; height: 160px; color: var(--foreground); }
+
+  /* ========== 流程区 ========== */
+  .hiw { background: var(--foreground); color: var(--background); overflow: hidden; }
+  .hiw-lines { position: absolute; inset: 0; opacity: .04; pointer-events: none; background-image: repeating-linear-gradient(-45deg, transparent, transparent 40px, currentColor 40px, currentColor 41px); }
+  .hiw .sec { position: relative; z-index: 2; }
+  .hiw .sec-title .dim { color: rgba(255,255,255,.5); }
+  .hiw-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px 96px; }
+  .step-btn { width: 100%; text-align: left; background: none; border: none; color: inherit; padding: 32px 0; border-bottom: 1px solid rgba(255,255,255,.1); transition: opacity .5s; font-family: inherit; }
+  .step-btn.dim { opacity: .4; }
+  .step-btn.dim:hover { opacity: .7; }
+  .step-no { font-size: 32px; color: rgba(255,255,255,.3); font-weight: 600; letter-spacing: -0.02em; }
+  .step-title { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 8px 0 12px; transition: transform .3s; }
+  .step-btn:hover .step-title { transform: translateX(8px); }
+  .step-desc { color: rgba(255,255,255,.6); }
+  .step-progress { margin-top: 16px; height: 1px; background: rgba(255,255,255,.2); overflow: hidden; }
+  .step-progress > i { display: block; height: 100%; background: rgba(255,255,255,.9); width: 0; animation: progress 5s linear forwards; }
+  @keyframes progress { from { width: 0; } to { width: 100%; } }
+  .code-win { border: 1px solid rgba(255,255,255,.1); position: sticky; top: 128px; }
+  .code-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .code-dots { display: flex; gap: 8px; }
+  .code-dots span { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,.2); }
+  .code-file { font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,.4); }
+  .code-body { padding: 32px; font-family: var(--font-mono); font-size: 14px; min-height: 280px; }
+  .code-body pre { color: rgba(255,255,255,.7); }
+  .code-line { line-height: 1.9; opacity: 0; transform: translateX(-8px); animation: lineReveal .4s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes lineReveal { to { opacity: 1; transform: none; } }
+  .code-line .ln { color: rgba(255,255,255,.2); width: 32px; display: inline-block; user-select: none; }
+  .code-char { display: inline-block; opacity: 0; filter: blur(8px); animation: charReveal .3s cubic-bezier(.22,1,.36,1) forwards; }
+  @keyframes charReveal { to { opacity: 1; filter: none; } }
+  .code-foot { display: flex; align-items: center; gap: 12px; padding: 16px 24px; border-top: 1px solid rgba(255,255,255,.1); }
+  .code-foot .ld { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  .code-foot span { font-family: var(--font-mono); font-size: 12px; color: rgba(255,255,255,.4); }
+
+  /* ========== 指标区 ========== */
+  .metrics { border-top: 1px solid rgba(22,22,22,.1); border-bottom: 1px solid rgba(22,22,22,.1); }
+  .metrics-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; margin-bottom: 64px; }
+  .live-line { display: flex; align-items: center; gap: 16px; font-family: var(--font-mono); font-size: 14px; color: var(--muted); }
+  .live-line .sep { color: rgba(22,22,22,.3); }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(22,22,22,.1); }
+  .metric-cell { background: var(--background); padding: 48px; }
+  .metric-num { font-size: clamp(3rem, 7vw, 5rem); font-weight: 600; letter-spacing: -0.03em; }
+  .metric-label { margin-top: 16px; font-size: 18px; color: var(--muted); }
+
+  /* ========== 安全区 ========== */
+  .security { background: rgba(22,22,22,.02); }
+  .sec-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 64px 96px; }
+  .sec-left .eyebrow { margin-bottom: 24px; }
+  .sec-left h2 { font-size: clamp(2.5rem, 6vw, 4rem); letter-spacing: -0.03em; font-weight: 600; line-height: 1.05; margin-bottom: 32px; }
+  .sec-left p { font-size: 20px; color: var(--muted); line-height: 1.6; margin-bottom: 48px; }
+  .certs { display: flex; flex-wrap: wrap; gap: 12px; }
+  .cert { border: 1px solid rgba(22,22,22,.1); padding: 8px 16px; font-family: var(--font-mono); font-size: 14px; }
+  .sec-cards { display: grid; gap: 24px; }
+  .sec-card { border: 1px solid rgba(22,22,22,.1); padding: 24px; transition: all .3s; }
+  .sec-card:hover { border-color: rgba(22,22,22,.2); }
+  .sec-card-in { display: flex; gap: 16px; }
+  .sec-ico { flex-shrink: 0; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(22,22,22,.1); transition: all .3s; }
+  .sec-card:hover .sec-ico { background: var(--foreground); color: var(--background); }
+  .sec-card h3 { font-size: 17px; font-weight: 500; margin-bottom: 4px; transition: transform .3s; }
+  .sec-card:hover h3 { transform: translateX(4px); }
+  .sec-card p { color: var(--muted); font-size: 14px; }
+
+  /* ========== 页脚 ========== */
+  footer { border-top: 1px solid rgba(22,22,22,.1); position: relative; }
+  .footer-wave { position: absolute; inset: 0; height: 256px; opacity: .2; pointer-events: none; overflow: hidden; }
+  .footer-inner { position: relative; z-index: 2; max-width: 1400px; margin: 0 auto; padding: 0 32px; }
+  .footer-main { padding: 64px 0 96px; display: grid; grid-template-columns: repeat(6, 1fr); gap: 48px 32px; }
+  .footer-brand { grid-column: span 2; }
+  .footer-brand .logo { display: inline-flex; align-items: baseline; gap: 4px; margin-bottom: 24px; }
+  .footer-brand .logo .name { font-size: 24px; font-weight: 600; letter-spacing: -0.4px; }
+  .footer-brand .logo .tm { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+  .footer-brand p { color: var(--muted); max-width: 280px; margin-bottom: 32px; }
+  .footer-col h3 { font-size: 14px; font-weight: 500; margin-bottom: 24px; }
+  .footer-col ul { list-style: none; display: grid; gap: 16px; }
+  .footer-col a { font-size: 14px; color: var(--muted); transition: color .3s; }
+  .footer-col a:hover { color: var(--foreground); }
+  .footer-bottom { padding: 32px 0; border-top: 1px solid rgba(22,22,22,.1); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .footer-bottom p { font-size: 14px; color: var(--muted); }
+  .footer-bottom .sys { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+
+  #log { position: fixed; right: 18px; bottom: 18px; z-index: 99; display: flex; flex-direction: column; gap: 8px; max-width: 380px; }
+  .logline {
+    background: var(--background); border: 1px solid var(--border); border-left: 3px solid var(--foreground);
+    border-radius: 10px; padding: 11px 14px; font-size: 13px; box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    animation: toastin .2s ease-out; word-break: break-all;
+  }
+  @keyframes toastin { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
+  .logline.ok { border-left-color: var(--green); }
+  .logline.err { border-left-color: #d64545; }
+
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    .hero-bottom { grid-template-columns: 1fr; }
+    .feature-body { grid-template-columns: 1fr; }
+    .hiw-grid, .sec-grid2 { grid-template-columns: 1fr; }
+    .metrics-head { flex-direction: column; align-items: flex-start; }
+    .metrics-grid { grid-template-columns: 1fr; }
+    .cta-inner { flex-direction: column; padding: 48px 32px; }
+    .footer-main { grid-template-columns: 1fr 1fr; }
+    .footer-brand { grid-column: span 2; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 导航 ========== -->
+<header class="nav" id="navBar">
+  <nav class="nav-inner">
+    <a class="nav-logo" href="#top"><span class="name">企业知识库</span><span class="tm">知识库版</span></a>
+    <div class="nav-links">
+      <a href="#features">能力</a>
+      <a href="#how-it-works">流程</a>
+      <a href="#metrics">指标</a>
+      <a href="#security">安全</a>
+    </div>
+    <div class="nav-right">
+      <span class="who" id="navWho" style="display:none"></span>
+      <span class="who"><span class="dot" id="srvDot"></span><span id="srvText">离线</span></span>
+      <button class="btn btn-sm btn-outline" id="btnLogin" onclick="scrollToLogin()">登录</button>
+      <button class="btn btn-sm btn-dark" id="btnGoUpload" style="display:none" onclick="location.href='/app.html?view=docs'">上传文档</button>
+      <button class="btn btn-sm btn-outline" id="btnGoSearch" style="display:none" onclick="location.href='/app.html?view=search'">知识检索 <span style="opacity:.55;font-size:11px">[WIP]</span></button>
+      <button class="btn btn-sm btn-outline" id="btnLogout" style="display:none" onclick="doLogout()">退出</button>
+    </div>
+  </nav>
+</header>
+
+<main id="top">
+
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero">
+  <div class="hero-grid" id="heroGrid"></div>
+  <div class="hero-sphere"><canvas id="sphereCanvas" style="width:100%;height:100%"></canvas></div>
+  <div class="hero-content">
+    <div class="hero-eyebrow"><span class="eyebrow">面向现代团队的企业知识库</span></div>
+    <h1 class="hero-title">
+      <span class="block">这个平台</span>
+      <span class="block">用来 <span class="word-inline"><span id="rotWord"></span><span class="word-underline"></span></span></span>
+    </h1>
+    <div class="hero-bottom">
+      <p class="hero-desc">上传即提交，审核后自动切块入库。用自然语言提问，答案从已入库的企业知识中来，知识不再困在聊天记录和微信文件里。</p>
+      <div class="hero-ctas">
+        <button class="btn btn-lg btn-dark" onclick="scrollToLogin()">开始使用 <span class="arr">→</span></button>
+        <button class="btn btn-lg btn-outline" onclick="document.getElementById('features').scrollIntoView()">查看能力</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 登录 ========== -->
+<section id="login">
+  <div class="cta-wrap">
+    <div class="cta-box reveal reveal-y" id="ctaBox">
+      <div class="cta-spot" id="ctaSpot"></div>
+      <div class="cta-inner">
+        <div class="cta-left">
+          <h2>准备好了吗？<br>开始沉淀吧。</h2>
+          <p id="ctaSub">登录后进入知识库 · 上传-审核-检索全流程</p>
+          <div id="loginPanel"></div>
+          <p class="cta-note">JWT 鉴权 · 部门隔离 · 向量检索</p>
+        </div>
+        <div class="cta-tetra"><canvas id="tetraCanvas" style="width:100%;height:100%"></canvas></div>
+      </div>
+      <div class="cta-corner tl"></div>
+      <div class="cta-corner br"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 特性区 ========== -->
+<section id="features">
+  <div class="sec">
+    <div class="sec-head reveal reveal-y">
+      <span class="eyebrow">核心能力</span>
+      <h2 class="sec-title">知识沉淀，<br><span class="dim">一次审核入库。</span></h2>
+    </div>
+    <div id="featureRows"></div>
+  </div>
+</section>
+
+<!-- ========== 流程区 ========== -->
+<section id="how-it-works" class="hiw">
+  <div class="hiw-lines"></div>
+  <div class="sec">
+    <div class="sec-head reveal reveal-y">
+      <span class="eyebrow" style="color:rgba(255,255,255,.5)">流程</span>
+      <h2 class="sec-title">三步完成。<br><span class="dim">知识流动。</span></h2>
+    </div>
+    <div class="hiw-grid">
+      <div id="stepBtns"></div>
+      <div class="code-win" id="codeWin"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 指标区 ========== -->
+<section id="metrics" class="metrics">
+  <div class="sec">
+    <div class="metrics-head reveal reveal-y">
+      <div>
+        <span class="eyebrow">实时指标</span>
+        <h2 class="sec-title" style="margin-top:24px">看得见的<br><span class="dim">沉淀。</span></h2>
+      </div>
+      <div class="live-line">
+        <span><span class="dot on"></span>实时</span>
+        <span class="sep">|</span>
+        <span id="clock"></span>
+      </div>
+    </div>
+    <div class="metrics-grid" id="metricsGrid"></div>
+  </div>
+</section>
+
+<!-- ========== 安全区 ========== -->
+<section id="security" class="security">
+  <div class="sec">
+    <div class="sec-grid2">
+      <div class="sec-left reveal reveal-y">
+        <span class="eyebrow">安全</span>
+        <h2>信任，<br>不容妥协。</h2>
+        <p>审核流不是形式，从权限矩阵到审计流水，每一次状态变更都有据可查。</p>
+        <div class="certs">
+          <span class="cert">JWT</span><span class="cert">RBAC</span><span class="cert">双状态机</span><span class="cert">审计流水</span><span class="cert">向量检索</span>
+        </div>
+      </div>
+      <div class="sec-cards" id="securityCards"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 页脚 ========== -->
+<footer>
+  <div class="footer-wave"><canvas id="waveCanvas" style="width:100%;height:100%"></canvas></div>
+  <div class="footer-inner">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <a class="logo" href="#top"><span class="name">企业知识库</span><span class="tm">知识库版</span></a>
+        <p>上传、审核、检索，知识沉淀为生产力，答案有据可查。</p>
+      </div>
+      <div class="footer-col"><h3>产品</h3><ul><li><a href="#features">知识文档</a></li><li><a href="#how-it-works">审核流</a></li><li><a href="#security">安全</a></li><li><a href="#metrics">指标</a></li></ul></div>
+      <div class="footer-col"><h3>开发者</h3><ul><li><a href="#how-it-works">接口文档</a></li><li><a href="app.html">工作台</a></li><li><a href="#features">能力</a></li><li><a href="#metrics">状态</a></li></ul></div>
+      <div class="footer-col"><h3>项目</h3><ul><li><a href="app.html">知识库</a></li><li><a href="#security">权限矩阵</a></li><li><a href="#features">向量检索</a></li></ul></div>
+      <div class="footer-col"><h3>法律</h3><ul><li><a href="#">隐私</a></li><li><a href="#">条款</a></li><li><a href="#security">安全</a></li></ul></div>
+    </div>
+    <div class="footer-bottom">
+      <p>2026 企业知识库. 保留所有权利。</p>
+      <div class="sys"><span class="dot on"></span>系统全部正常</div>
+    </div>
+  </div>
+</footer>
+
+</main>
+<div id="log"></div>
+
+<script>
+/* ================= 模板动效 ================= */
+
+/* --- 旋转单词 --- */
+const ROT_WORDS = ["沉淀", "审核", "检索", "答疑"];
+let rotIdx = 0;
+function renderWord() {
+  const word = ROT_WORDS[rotIdx];
+  const el = document.getElementById('rotWord');
+  el.innerHTML = '';
+  word.split('').forEach((ch, i) => {
+    const s = document.createElement('span');
+    s.className = 'char-in';
+    s.style.animationDelay = (i * 50) + 'ms';
+    s.textContent = ch;
+    el.appendChild(s);
+  });
+}
+setInterval(() => { rotIdx = (rotIdx + 1) % ROT_WORDS.length; renderWord(); }, 2500);
+renderWord();
+
+/* --- hero 网格线 --- */
+(function () {
+  const g = document.getElementById('heroGrid');
+  let html = '';
+  for (let i = 0; i < 8; i++) html += `<div style="position:absolute;height:1px;background:rgba(22,22,22,.1);top:${12.5 * (i + 1)}%;left:0;right:0"></div>`;
+  for (let i = 0; i < 12; i++) html += `<div style="position:absolute;width:1px;background:rgba(22,22,22,.1);left:${8.33 * (i + 1)}%;top:0;bottom:0"></div>`;
+  g.innerHTML = html;
+})();
+
+/* --- 动画球体 --- */
+function initSphere(canvas) {
+  const ctx = canvas.getContext("2d");
+  const chars = "░▒▓█▀▄▌▐│─┤├┴┬╭╮╰╯";
+  let time = 0;
+  const resize = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  };
+  resize();
+  window.addEventListener("resize", resize);
+  const render = () => {
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    const centerX = rect.width / 2, centerY = rect.height / 2;
+    const radius = Math.min(rect.width, rect.height) * 0.525;
+    ctx.font = "12px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const points = [];
+    for (let phi = 0; phi < Math.PI * 2; phi += 0.15) {
+      for (let theta = 0; theta < Math.PI; theta += 0.15) {
+        const x = Math.sin(theta) * Math.cos(phi + time * 0.5);
+        const y = Math.sin(theta) * Math.sin(phi + time * 0.5);
+        const z = Math.cos(theta);
+        const rotY = time * 0.3;
+        const newX = x * Math.cos(rotY) - z * Math.sin(rotY);
+        const newZ = x * Math.sin(rotY) + z * Math.cos(rotY);
+        const rotX = time * 0.2;
+        const newY = y * Math.cos(rotX) - newZ * Math.sin(rotX);
+        const finalZ = y * Math.sin(rotX) + newZ * Math.cos(rotX);
+        const depth = (finalZ + 1) / 2;
+        points.push({ x: centerX + newX * radius, y: centerY + newY * radius, z: finalZ, char: chars[Math.floor(depth * (chars.length - 1))] });
+      }
+    }
+    points.sort((a, b) => a.z - b.z);
+    points.forEach(p => {
+      const alpha = 0.2 + (p.z + 1) * 0.4;
+      ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+      ctx.fillText(p.char, p.x, p.y);
+    });
+    time += 0.02;
+    requestAnimationFrame(render);
+  };
+  render();
+}
+
+/* --- 四面体 --- */
+function initTetrahedron(canvas) {
+  const ctx = canvas.getContext("2d");
+  const chars = "░▒▓█▀▄▌▐│─┤├┴┬╭╮╰╯";
+  const vertices = [
+    { x: 0, y: 1, z: 0 }, { x: -0.943, y: -0.333, z: -0.5 },
+    { x: 0.943, y: -0.333, z: -0.5 }, { x: 0, y: -0.333, z: 1 },
+  ];
+  const edges = [[0,1],[0,2],[0,3],[1,2],[2,3],[3,1]];
+  const faces = [[0,1,2],[0,2,3],[0,3,1],[1,3,2]];
+  const rY = (p, a) => ({ x: p.x * Math.cos(a) - p.z * Math.sin(a), y: p.y, z: p.x * Math.sin(a) + p.z * Math.cos(a) });
+  const rX = (p, a) => ({ x: p.x, y: p.y * Math.cos(a) - p.z * Math.sin(a), z: p.y * Math.sin(a) + p.z * Math.cos(a) });
+  const rZ = (p, a) => ({ x: p.x * Math.cos(a) - p.y * Math.sin(a), y: p.x * Math.sin(a) + p.y * Math.cos(a), z: p.z });
+  let time = 0;
+  const resize = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  };
+  resize();
+  window.addEventListener("resize", resize);
+  const render = () => {
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    const centerX = rect.width / 2, centerY = rect.height / 2;
+    const scale = Math.min(rect.width, rect.height) * 0.7;
+    ctx.font = "18px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const points = [];
+    edges.forEach(([i, j]) => {
+      const v1 = vertices[i], v2 = vertices[j];
+      for (let t = 0; t <= 1; t += 0.05) {
+        let p = { x: v1.x + (v2.x - v1.x) * t, y: v1.y + (v2.y - v1.y) * t, z: v1.z + (v2.z - v1.z) * t };
+        p = rY(rX(rZ(p, time * 0.2), time * 0.3), time * 0.4);
+        const depth = (p.z + 1.5) / 3;
+        points.push({ x: centerX + p.x * scale, y: centerY - p.y * scale, z: p.z, char: chars[Math.min(Math.floor(depth * (chars.length - 1)), chars.length - 1)] });
+      }
+    });
+    faces.forEach(([i, j, k]) => {
+      const v1 = vertices[i], v2 = vertices[j], v3 = vertices[k];
+      for (let u = 0; u <= 1; u += 0.12) {
+        for (let v = 0; v <= 1 - u; v += 0.12) {
+          const w = 1 - u - v;
+          let p = { x: v1.x * u + v2.x * v + v3.x * w, y: v1.y * u + v2.y * v + v3.y * w, z: v1.z * u + v2.z * v + v3.z * w };
+          p = rY(rX(rZ(p, time * 0.2), time * 0.3), time * 0.4);
+          const depth = (p.z + 1.5) / 3;
+          points.push({ x: centerX + p.x * scale, y: centerY - p.y * scale, z: p.z, char: chars[Math.min(Math.floor(depth * (chars.length - 1)), chars.length - 1)] });
+        }
+      }
+    });
+    points.sort((a, b) => a.z - b.z);
+    points.forEach(p => {
+      const alpha = 0.15 + (p.z + 1.5) * 0.25;
+      ctx.fillStyle = `rgba(0, 0, 0, ${Math.min(alpha, 0.9)})`;
+      ctx.fillText(p.char, p.x, p.y);
+    });
+    time += 0.015;
+    requestAnimationFrame(render);
+  };
+  render();
+}
+
+/* --- 波浪 --- */
+function initWave(canvas) {
+  const ctx = canvas.getContext("2d");
+  const chars = "·∘○◯◌●◉";
+  let time = 0;
+  const resize = () => {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    ctx.scale(dpr, dpr);
+  };
+  resize();
+  window.addEventListener("resize", resize);
+  const render = () => {
+    const rect = canvas.getBoundingClientRect();
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.font = "14px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const cols = Math.floor(rect.width / 20), rows = Math.floor(rect.height / 20);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
+        const px = (x + 0.5) * (rect.width / cols), py = (y + 0.5) * (rect.height / rows);
+        const wave1 = Math.sin(x * 0.2 + time * 2) * Math.cos(y * 0.15 + time);
+        const wave2 = Math.sin((x + y) * 0.1 + time * 1.5);
+        const wave3 = Math.cos(x * 0.1 - y * 0.1 + time * 0.8);
+        const normalized = ((wave1 + wave2 + wave3) / 3 + 1) / 2;
+        const alpha = 0.15 + normalized * 0.5;
+        ctx.fillStyle = `rgba(0, 0, 0, ${alpha})`;
+        ctx.fillText(chars[Math.floor(normalized * (chars.length - 1))], px, py);
+      }
+    }
+    time += 0.03;
+    requestAnimationFrame(render);
+  };
+  render();
+}
+
+/* --- 特性区 --- */
+const FEATURES = [
+  { no: "01", title: "提交审核", desc: "员工上传文档，自动进入待审队列；领导一键通过/驳回，驳回必填理由；管理员提交免审直接入库。", visual: "deploy" },
+  { no: "02", title: "双状态机", desc: "审核走人工、入库走机器，两条线独立追踪：审核通过 ≠ 已入库，入库失败可重试，状态永不说谎。", visual: "ai" },
+  { no: "03", title: "向量检索", desc: "审核通过后自动切块、embedding 入向量库；员工自然语言提问，按部门过滤返回可溯源答案。", visual: "collab" },
+  { no: "04", title: "部门隔离", desc: "员工只见本部门文档，领导/管理员可查全部；越权访问统一 404 防枚举，上传时刻部门快照调岗不漂移。", visual: "security" },
+];
+const FEATURE_SVGS = {
+  deploy: `<svg viewBox="0 0 200 160" style="width:100%;height:100%">
+    <defs><clipPath id="deployClip"><rect x="30" y="20" width="140" height="120" rx="4"/></clipPath></defs>
+    <rect x="30" y="20" width="140" height="120" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+    <g clip-path="url(#deployClip)">${[0,1,2,3,4,5].map(i => `<rect x="40" y="${35+i*16}" width="120" height="10" rx="2" fill="currentColor" opacity="0.15"><animate attributeName="opacity" values="0.15;0.8;0.15" dur="2s" begin="${i*0.15}s" repeatCount="indefinite"/><animate attributeName="width" values="20;120;20" dur="2s" begin="${i*0.15}s" repeatCount="indefinite"/></rect>`).join('')}</g>
+    <circle cx="100" cy="155" r="3" fill="currentColor" opacity="0.3"><animate attributeName="opacity" values="0.3;1;0.3" dur="1s" repeatCount="indefinite"/></circle>
+  </svg>`,
+  ai: `<svg viewBox="0 0 200 160" style="width:100%;height:100%">
+    <circle cx="100" cy="80" r="12" fill="currentColor"><animate attributeName="r" values="12;14;12" dur="2s" repeatCount="indefinite"/></circle>
+    ${[0,1,2,3,4,5].map(i => { const a = i*60*Math.PI/180, r = 50; return `<line x1="100" y1="80" x2="${100+Math.cos(a)*r}" y2="${80+Math.sin(a)*r}" stroke="currentColor" stroke-width="1" opacity="0.3"><animate attributeName="opacity" values="0.3;0.8;0.3" dur="2s" begin="${i*0.3}s" repeatCount="indefinite"/></line><circle cx="${100+Math.cos(a)*r}" cy="${80+Math.sin(a)*r}" r="6" fill="none" stroke="currentColor" stroke-width="2"><animate attributeName="r" values="6;8;6" dur="2s" begin="${i*0.3}s" repeatCount="indefinite"/></circle>`; }).join('')}
+    <circle cx="100" cy="80" r="30" fill="none" stroke="currentColor" stroke-width="1" opacity="0"><animate attributeName="r" values="20;60" dur="2s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.5;0" dur="2s" repeatCount="indefinite"/></circle>
+  </svg>`,
+  collab: `<svg viewBox="0 0 200 160" style="width:100%;height:100%">
+    <rect x="30" y="50" width="50" height="60" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="55" y="85" text-anchor="middle" font-size="20" font-family="monospace" fill="currentColor">A</text>
+    <circle cx="55" cy="35" r="12" fill="none" stroke="currentColor" stroke-width="2"/>
+    <rect x="120" y="50" width="50" height="60" rx="4" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="145" y="85" text-anchor="middle" font-size="20" font-family="monospace" fill="currentColor">B</text>
+    <circle cx="145" cy="35" r="12" fill="none" stroke="currentColor" stroke-width="2"/>
+    <line x1="80" y1="80" x2="120" y2="80" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4"><animate attributeName="stroke-dashoffset" values="0;-8" dur="0.5s" repeatCount="indefinite"/></line>
+    <circle r="4" fill="currentColor"><animateMotion dur="1.5s" repeatCount="indefinite"><mpath href="#dataPath"/></animateMotion></circle>
+    <path id="dataPath" d="M 80 80 L 120 80" fill="none"/>
+    <g transform="translate(100,130)"><circle r="6" fill="none" stroke="currentColor" stroke-width="2"><animate attributeName="r" values="6;10;6" dur="1s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;0.3;1" dur="1s" repeatCount="indefinite"/></circle></g>
+  </svg>`,
+  security: `<svg viewBox="0 0 200 160" style="width:100%;height:100%">
+    <path d="M 100 20 L 150 40 L 150 90 Q 150 130 100 145 Q 50 130 50 90 L 50 40 Z" fill="none" stroke="currentColor" stroke-width="2"/>
+    <path d="M 100 35 L 135 50 L 135 85 Q 135 115 100 128 Q 65 115 65 85 L 65 50 Z" fill="currentColor" opacity="0.1"><animate attributeName="opacity" values="0.1;0.2;0.1" dur="2s" repeatCount="indefinite"/></path>
+    <rect x="85" y="70" width="30" height="25" rx="3" fill="currentColor"/>
+    <path d="M 90 70 L 90 60 Q 90 50 100 50 Q 110 50 110 60 L 110 70" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="100" cy="80" r="4" fill="white"/><rect x="98" y="82" width="4" height="8" fill="white"/>
+    <line x1="60" y1="60" x2="140" y2="60" stroke="currentColor" stroke-width="1" opacity="0"><animate attributeName="y1" values="40;120;40" dur="3s" repeatCount="indefinite"/><animate attributeName="y2" values="40;120;40" dur="3s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0.5;0" dur="3s" repeatCount="indefinite"/></line>
+  </svg>`,
+};
+(function () {
+  document.getElementById('featureRows').innerHTML = FEATURES.map(f => `
+    <div class="feature-row reveal reveal-y">
+      <div class="feature-no">${f.no}</div>
+      <div class="feature-body">
+        <div>
+          <h3 class="feature-title">${f.title}</h3>
+          <p class="feature-desc">${f.desc}</p>
+        </div>
+        <div class="feature-visual">${FEATURE_SVGS[f.visual]}</div>
+      </div>
+    </div>`).join('');
+})();
+
+/* --- 流程区 --- */
+const STEPS = [
+  { no: "I", title: "上传提交", desc: "员工上传 txt/md/pdf，支持分片与秒传，自动提交进待审队列，状态机启动。",
+    code: ["# 上传 + 提交审核", "POST /files/upload  # 分片 · 秒传", "POST /knowledge/submit", "→ status = pending"] },
+  { no: "II", title: "审核通过", desc: "领导审核且不能自审，通过即触发切块+向量入库；管理员提交免审直接入库。",
+    code: ["# 审核 + 入库启动", "POST /knowledge/{id}/approve", "→ status = approved", "→ index_status = indexing"] },
+  { no: "III", title: "检索问答", desc: "入库完成后，员工用自然语言提问，按部门过滤检索向量库，答案带来源文档。",
+    code: ["# 检索 Step 5", "POST /knowledge/search", "→ top_k 向量检索", "→ 答案 + 溯源"] },
+];
+let activeStep = 0;
+function renderSteps() {
+  document.getElementById('stepBtns').innerHTML = STEPS.map((s, i) => `
+    <button class="step-btn ${i === activeStep ? '' : 'dim'}" onclick="setStep(${i})">
+      <div style="display:flex;align-items:flex-start;gap:24px">
+        <span class="step-no">${s.no}</span>
+        <div style="flex:1">
+          <h3 class="step-title">${s.title}</h3>
+          <p class="step-desc">${s.desc}</p>
+          ${i === activeStep ? '<div class="step-progress"><i></i></div>' : ''}
+        </div>
+      </div>
+    </button>`).join('');
+  const code = STEPS[activeStep].code;
+  document.getElementById('codeWin').innerHTML = `
+    <div class="code-head">
+      <div class="code-dots"><span></span><span></span><span></span></div>
+      <span class="code-file">knowledge.py</span>
+    </div>
+    <div class="code-body"><pre>
+      ${code.map((line, li) => `<div class="code-line" style="animation-delay:${li * 80}ms"><span class="ln">${li + 1}</span><span>${line.split('').map((ch, ci) => `<span class="code-char" style="animation-delay:${li * 80 + ci * 15}ms">${ch === ' ' ? '\u00A0' : ch}</span>`).join('')}</span></div>`).join('')}
+    </pre></div>
+    <div class="code-foot"><span class="ld"></span><span>就绪</span></div>`;
+}
+function setStep(i) { activeStep = i; renderSteps(); }
+setInterval(() => { activeStep = (activeStep + 1) % STEPS.length; renderSteps(); }, 5000);
+renderSteps();
+
+/* --- 安全区 --- */
+const SEC_CARDS = [
+  { icon: "shield", title: "双状态机追踪", desc: "审核走人工、入库走机器，两条线独立追踪，状态永不说谎。" },
+  { icon: "lock", title: "RBAC 权限矩阵", desc: "员工/领导/管理员四行权限；不能自审；管理员提交免审。" },
+  { icon: "eye", title: "审核审计流水", desc: "submit/approve/reject/resubmit 每次人工操作落一行，有据可查。" },
+  { icon: "check", title: "JWT + 部门快照", desc: "员工只见本部门、越权 404 防枚举；调岗后归属不漂移。" },
+];
+const ICONS = {
+  shield: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+  check: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+};
+(function () {
+  document.getElementById('securityCards').innerHTML = SEC_CARDS.map(c => `
+    <div class="sec-card reveal reveal-x">
+      <div class="sec-card-in">
+        <div class="sec-ico">${ICONS[c.icon]}</div>
+        <div><h3>${c.title}</h3><p>${c.desc}</p></div>
+      </div>
+    </div>`).join('');
+})();
+
+/* --- 指标区 --- */
+const METRICS = [
+  { key: "files", label: "知识文档", suffix: "" },
+  { key: "size", label: "已入库", suffix: "" },
+  { key: "today", label: "待审核", suffix: "" },
+  { key: "downloads", label: "已驳回", suffix: "" },
+];
+let metricValues = { files: 0, size: 0, today: 0, downloads: 0 };
+function renderMetrics() {
+  document.getElementById('metricsGrid').innerHTML = METRICS.map((m, i) => `
+    <div class="metric-cell reveal reveal-y" style="transition-delay:${i * 100}ms">
+      <div class="metric-num" data-target="${m.key}">0</div>
+      <div class="metric-label">${m.label}</div>
+    </div>`).join('');
+}
+function updateMetrics() {
+  METRICS.forEach(m => {
+    const el = document.querySelector(`.metric-num[data-target="${m.key}"]`);
+    if (!el) return;
+    animateNum(el, metricValues[m.key] || 0);
+  });
+}
+function animateNum(el, end) {
+  const dur = 1200, t0 = performance.now();
+  const fmt = v => String(Math.floor(v)).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  const step = t => {
+    const p = Math.min((t - t0) / dur, 1);
+    el.textContent = fmt(end * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+/* --- 时钟 + 显现 --- */
+(function () {
+  const clock = document.getElementById('clock');
+  setInterval(() => { clock.textContent = new Date().toLocaleTimeString(); }, 1000);
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  io.observe(document.getElementById('hero'));
+})();
+
+/* --- CTA 聚光灯 + 导航滚动 --- */
+document.getElementById('ctaBox').addEventListener('mousemove', e => {
+  const r = e.currentTarget.getBoundingClientRect();
+  const x = ((e.clientX - r.left) / r.width) * 100, y = ((e.clientY - r.top) / r.height) * 100;
+  document.getElementById('ctaSpot').style.background = `radial-gradient(600px circle at ${x}% ${y}%, rgba(0,0,0,0.15), transparent 40%)`;
+});
+window.addEventListener('scroll', () => {
+  document.getElementById('navBar').classList.toggle('scrolled', window.scrollY > 24);
+});
+
+/* ================= 鉴权 ================= */
+const TOKEN_KEY = 'kb_token';
+const USER_KEY = 'kb_user';
+const $ = id => document.getElementById(id);
+function token() { return localStorage.getItem(TOKEN_KEY); }
+function userInfo() { try { return JSON.parse(localStorage.getItem(USER_KEY) || '{}'); } catch { return {}; } }
+function whoText(u) {
+  const rest = [];
+  if (u.department && u.department !== '未分配') rest.push(u.department);
+  if (u.position) rest.push(u.position);
+  if (u.role && u.role !== 'employee') rest.push(u.role === 'leader' ? '领导' : '管理员');
+  return `<b>${escapeHtml(u.username || '')}</b>` + (rest.length ? ' · ' + rest.map(escapeHtml).join(' · ') : '');
+}
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function log(text, type) {
+  const el = document.createElement('div');
+  el.className = 'logline ' + (type || '');
+  el.textContent = text;
+  $('log').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 320); }, 4200);
+}
+function scrollToLogin() { document.getElementById('login').scrollIntoView(); }
+function doLogout() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  log('已退出登录');
+  refreshAuthUI();
+}
+function refreshAuthUI() {
+  const u = userInfo();
+  const logged = !!token();
+  $('navWho').style.display = logged ? '' : 'none';
+  if (logged) $('navWho').innerHTML = whoText(u);
+  $('btnLogin').style.display = logged ? 'none' : '';
+  $('btnGoUpload').style.display = logged ? '' : 'none';
+  $('btnGoSearch').style.display = logged ? '' : 'none';
+  $('btnLogout').style.display = logged ? '' : 'none';
+  $('ctaSub').textContent = logged ? '工作台已就绪 · 上传、审核、检索都在等你' : '登录后进入知识库 · 上传-审核-检索全流程';
+  $('loginPanel').innerHTML = logged
+    ? `<p style="font-size:20px;color:var(--muted)">已登录：${whoText(u)}</p>
+       <div style="display:flex;gap:16px;margin-top:24px;flex-wrap:wrap">
+         <button class="btn btn-lg btn-dark" onclick="location.href='/app.html?view=docs'">上传文档 →</button>
+         <button class="btn btn-lg btn-outline" onclick="location.href='/app.html?view=search'">知识检索 <span style="opacity:.55;font-size:12px">[WIP]</span></button>
+         <button class="btn btn-lg btn-outline" onclick="doLogout()">退出登录</button>
+       </div>`
+    : initialLoginHTML;
+  if (!logged) bindLoginEvents();
+}
+const initialLoginHTML = `
+  <div class="login-tabs">
+    <button id="tabLogin" class="on">登录</button>
+    <button id="tabReg">注册</button>
+  </div>
+  <div class="login-fields">
+    <div class="field"><label>用户名</label><input id="loginUser" autocomplete="off" placeholder="请输入用户名"></div>
+    <div class="field"><label>密码</label><input id="loginPass" type="password" placeholder="请输入密码"></div>
+    <div class="field" id="deptHint" style="display:none;color:var(--muted);font-size:13px">注册后由管理员分配部门</div>
+    <button class="btn btn-lg btn-dark" id="btnGo">登 录</button>
+  </div>`;
+let authMode = 'login';
+function bindLoginEvents() {
+  const tabLogin = $('tabLogin'), tabReg = $('tabReg');
+  if (!tabLogin) return;
+  tabLogin.addEventListener('click', () => { authMode = 'login'; tabLogin.className = 'on'; tabReg.className = ''; $('deptHint').style.display = 'none'; $('btnGo').textContent = '登 录'; });
+  tabReg.addEventListener('click', () => { authMode = 'register'; tabReg.className = 'on'; tabLogin.className = ''; $('deptHint').style.display = ''; $('btnGo').textContent = '注 册'; });
+  $('btnGo').addEventListener('click', doAuth);
+  $('loginUser').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginPass').focus(); });
+  $('loginPass').addEventListener('keydown', e => { if (e.key === 'Enter') doAuth(); });
+}
+async function doAuth() {
+  const username = $('loginUser').value.trim();
+  const password = $('loginPass').value;
+  if (!username || !password) { log('用户名和密码不能为空', 'err'); return; }
+  // 注册不再选部门，部门由管理员分配，注册请求里不再携带 department
+  const body = new URLSearchParams({ username, password });
+  try {
+    const res = await fetch('/auth/' + (authMode === 'login' ? 'login' : 'register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body,
+    });
+    const data = await res.json();
+    if (!res.ok) { log(data.detail || '请求失败', 'err'); return; }
+    if (authMode === 'login') {
+      localStorage.setItem(TOKEN_KEY, data.access_token);
+      localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, department: data.department, role: data.role, position: data.position }));
+      log('登录成功：' + data.username);
+      location.href = '/app.html';
+    } else {
+      log('注册成功，请登录');
+      authMode = 'login';
+      const t1 = $('tabLogin'), t2 = $('tabReg');
+      t1.className = 'on'; t2.className = '';
+      $('deptHint').style.display = 'none';
+      $('btnGo').textContent = '登 录';
+    }
+  } catch { log('无法连接服务', 'err'); }
+}
+
+/* --- 启动 --- */
+renderMetrics();
+initSphere(document.getElementById('sphereCanvas'));
+initTetrahedron(document.getElementById('tetraCanvas'));
+initWave(document.getElementById('waveCanvas'));
+refreshAuthUI();
+</script>
+</body>
+</html>
