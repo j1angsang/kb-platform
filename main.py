@@ -9,6 +9,7 @@ import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
@@ -60,6 +61,11 @@ app.include_router(knowledge_router)
 app.include_router(chat_router)
 app.include_router(health_router)
 app.include_router(metrics_router)
+
+
+@app.get("/app", include_in_schema=False)
+async def vue_workbench():
+    return FileResponse("static/app/index.html")
 
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")

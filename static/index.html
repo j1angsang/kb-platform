@@ -277,8 +277,8 @@
       <span class="who" id="navWho" style="display:none"></span>
       <span class="who"><span class="dot" id="srvDot"></span><span id="srvText">离线</span></span>
       <button class="btn btn-sm btn-outline" id="btnLogin" onclick="scrollToLogin()">登录</button>
-      <button class="btn btn-sm btn-dark" id="btnGoUpload" style="display:none" onclick="location.href='/app.html?view=docs'">上传文档</button>
-      <button class="btn btn-sm btn-outline" id="btnGoSearch" style="display:none" onclick="location.href='/app.html?view=search'">知识检索 <span style="opacity:.55;font-size:11px">[WIP]</span></button>
+      <button class="btn btn-sm btn-dark" id="btnGoUpload" style="display:none" onclick="location.href='/app/?view=docs'">上传文档</button>
+      <button class="btn btn-sm btn-outline" id="btnGoSearch" style="display:none" onclick="location.href='/app/?view=search'">知识检索 <span style="opacity:.55;font-size:11px">[WIP]</span></button>
       <button class="btn btn-sm btn-outline" id="btnLogout" style="display:none" onclick="doLogout()">退出</button>
     </div>
   </nav>
@@ -804,8 +804,8 @@ function refreshAuthUI() {
   $('loginPanel').innerHTML = logged
     ? `<p style="font-size:20px;color:var(--muted)">已登录：${whoText(u)}</p>
        <div style="display:flex;gap:16px;margin-top:24px;flex-wrap:wrap">
-         <button class="btn btn-lg btn-dark" onclick="location.href='/app.html?view=docs'">上传文档 →</button>
-         <button class="btn btn-lg btn-outline" onclick="location.href='/app.html?view=search'">知识检索 <span style="opacity:.55;font-size:12px">[WIP]</span></button>
+         <button class="btn btn-lg btn-dark" onclick="location.href='/app/?view=docs'">上传文档 →</button>
+         <button class="btn btn-lg btn-outline" onclick="location.href='/app/?view=search'">知识检索 <span style="opacity:.55;font-size:12px">[WIP]</span></button>
          <button class="btn btn-lg btn-outline" onclick="doLogout()">退出登录</button>
        </div>`
     : initialLoginHTML;
@@ -850,7 +850,7 @@ async function doAuth() {
       localStorage.setItem(TOKEN_KEY, data.access_token);
       localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, department: data.department, role: data.role, position: data.position }));
       log('登录成功：' + data.username);
-      location.href = '/app.html';
+      location.href = '/app/';
     } else {
       log('注册成功，请登录');
       authMode = 'login';

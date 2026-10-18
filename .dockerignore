@@ -13,3 +13,6 @@ eval
 .tmp_*
 *.tmp
 *.bak
+
+frontend/node_modules
+frontend/.vite

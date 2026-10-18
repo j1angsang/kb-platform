@@ -87,7 +87,17 @@ docker exec -it pg-local psql -U postgres -d file_storage_db \
 
 Windows 下可直接双击 `start.bat`，已内置迁移 + 启动。浏览器打开 `http://127.0.0.1:8005/`。
 
-### 7. 冒烟验证
+### 7. 前端构建（Vue）
+
+工作台源码在 `frontend/`，构建产物在 `static/app/`，访问 `/app/`。仓库已提交构建产物；改源码后重新构建：
+
+```bash
+cd frontend
+pnpm install
+pnpm build
+```
+
+### 8. 冒烟验证
 
 ```bash
 # 存活 + 依赖就绪
@@ -177,6 +187,8 @@ curl -s -X POST http://127.0.0.1:8005/files/upload \
 - [对象存储代码讲解](docs/OBJECT_STORAGE_CODE_WALKTHROUGH.md)
 - [受限 Text2SQL 改造报告](docs/TEXT2SQL_REPORT.md)
 - [受限 Text2SQL 代码讲解](docs/TEXT2SQL_CODE_WALKTHROUGH.md)
+- [Vue 前端改造报告](docs/FRONTEND_REPORT.md)
+- [Vue 前端代码讲解](docs/FRONTEND_CODE_WALKTHROUGH.md)
 - [Agent 架构](agents/ARCHITECTURE.md)
 
 ## 评测
@@ -251,6 +263,18 @@ docker compose up -d --build
 
 边界：Text2SQL 只做员工目录统计，不替代知识检索；不开放写操作。LLM 生成失败或 SQL 校验失败会返回明确错误，不会执行未校验 SQL。
 
+## 前端工作台（Vue 3 + Vite + TS）
+
+`/app/` 是 Vue 工作台，`/app.html` 保留为旧版回退入口。页面沿用原 `app.html` 的 CSS 变量、字体和类名，登录、文档、审核、问答、文件四个视图已迁移。
+
+```bash
+cd frontend
+pnpm install
+pnpm build
+```
+
+边界：Vue 版上传走单文件接口；旧版的分片续传/秒传和共享弹窗仍在 `/app.html`，后续按需迁移。
+
 ## 测试
 
 完整版使用 pytest + 独立测试库；本展示仓库为控制体积，未包含 `tests/`。
@@ -259,7 +283,9 @@ docker compose up -d --build
 
 | 路径 | 职责 |
 |---|---|
-| main.py | App 组装、startup、配置校验、健康检查路由 |
+| main.py | App 组装、startup、配置校验、健康检查路由；`/app` 指向 Vue 工作台 |
+| frontend/ | Vue 3 + Vite + TypeScript 源码，构建到 `static/app/` |
+| static/ | 首页、旧版工作台 `/app.html`、Vue 构建产物 `static/app/`、字体与 vendor |
 | config/ | DB / LLM / 日志 / 配置校验 / 限流 / 安全头 |
 | routers/ | auth / files / knowledge / chat / analytics / health |
 | services/ | 上传落盘、存储路径、权限集中化；`object_storage.py` 是 local/S3 适配，`text2sql.py` 是受限 SQL 生成/校验/执行 |
