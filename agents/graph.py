@@ -387,6 +387,7 @@ SYSTEM_PROMPT = """你是企业内部知识问答助手。你可以：
 2. 查询本部门已入库文档列表（list_department_docs）
 3. 按文档 ID 查询审核/入库状态（check_doc_status，参数 doc_id）——员工问'某文档处理到哪一步了'时使用
 4. 精确查询员工信息（query_personnel，参数 name 可选）——问'某人在哪个部门/什么岗位/部门有哪些人'时使用
+5. 员工统计（query_employee_stats，参数 question）——问人数/岗位/角色/入职时间分布时使用；不要自己写 SQL
 
 规则：
 - 回答知识类问题时，必须基于工具/知识库检索结果，并用 [N] 数字标注引用
@@ -617,6 +618,7 @@ async def exact_source_hook(request, handler):
     result = await handler(request)
     exact_source_map = {
         "query_personnel": {"kind": "employees", "label": "员工信息库", "department": request.state["user_department"]},
+        "query_employee_stats": {"kind": "employees", "label": "员工统计", "department": request.state["user_department"]},
     }
     card = exact_source_map.get(request.tool_call["name"])
     if not card:

@@ -31,6 +31,7 @@ from crud import knowledge as knowledge_crud
 from services.storage import STORAGE_DIR
 from routers.auth import router as auth_router
 from routers.admin import router as admin_router
+from routers.analytics import router as analytics_router
 from routers.files import router as files_router
 from routers.files import upload_cleanup_loop
 from routers.health import router as health_router
@@ -53,6 +54,7 @@ app.add_middleware(SecurityHeadersMiddleware)
 
 app.include_router(auth_router)
 app.include_router(admin_router)
+app.include_router(analytics_router)
 app.include_router(files_router)
 app.include_router(knowledge_router)
 app.include_router(chat_router)

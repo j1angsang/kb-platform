@@ -30,6 +30,7 @@ dependencies = [
     "rapidocr[onnxruntime]>=3.9.2",
     "redis>=8.1.0",
     "sqlalchemy>=2.0.51",
+    "sqlglot>=25.0",
     "uvicorn>=0.51.0",
 ]
 

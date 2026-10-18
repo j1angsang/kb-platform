@@ -1,4 +1,4 @@
-# 对象存储代码讲解
+﻿# 对象存储代码讲解
 
 ## 1. 文件地图
 
@@ -226,8 +226,8 @@ if object_storage.enabled:
 ```bash
 set STORAGE_BACKEND=s3
 set S3_ENDPOINT=127.0.0.1:9000
-set S3_ACCESS_KEY=minioadmin
-set S3_SECRET_KEY=minioadmin
+set S3_ACCESS_KEY=<minio-access-key>
+set S3_SECRET_KEY=<minio-secret-key>
 set S3_BUCKET=kb-files
 set S3_REGION=us-east-1
 python -c "from services.object_storage import object_storage; print(object_storage.healthcheck())"
@@ -259,3 +259,4 @@ docker compose up -d --build
 - PDF 页图、OCR 中间产物是本地缓存，丢了可以重新解析；
 - 没有做多实例合并的分布式锁；
 - 当前环境 Docker 拉不到 MinIO 镜像，Compose 只做了配置校验；MinIO 社区二进制已归档，AIStor 二进制需要 license。S3 协议层用兼容服务验证。
+

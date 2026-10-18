@@ -1,0 +1,20 @@
+{"id":"t2s-01","question":"技术部有多少人？","expected":[["8"]],"ordered":false}
+{"id":"t2s-02","question":"人事部有多少人？","expected":[["5"]],"ordered":false}
+{"id":"t2s-03","question":"销售部有多少人？","expected":[["2"]],"ordered":false}
+{"id":"t2s-04","question":"财务部有多少人？","expected":[["1"]],"ordered":false}
+{"id":"t2s-05","question":"行政部有多少人？","expected":[["1"]],"ordered":false}
+{"id":"t2s-06","question":"公司总共有多少员工？","expected":[["17"]],"ordered":false}
+{"id":"t2s-07","question":"各部门人数排名","expected":[["技术部","8"],["人事部","5"],["销售部","2"],["行政部","1"],["财务部","1"]],"ordered":false}
+{"id":"t2s-08","question":"技术部和人事部一共有多少人？","expected":[["13"]],"ordered":false}
+{"id":"t2s-09","question":"管理员有多少人？","expected":[["2"]],"ordered":false}
+{"id":"t2s-10","question":"领导有多少人？","expected":[["5"]],"ordered":false}
+{"id":"t2s-11","question":"普通员工有多少人？","expected":[["10"]],"ordered":false}
+{"id":"t2s-12","question":"技术部有多少管理员？","expected":[["2"]],"ordered":false}
+{"id":"t2s-13","question":"技术部有多少领导？","expected":[["2"]],"ordered":false}
+{"id":"t2s-14","question":"技术部有多少普通员工？","expected":[["4"]],"ordered":false}
+{"id":"t2s-15","question":"销售部有哪些岗位？","expected":[["销售代表"],["销售经理"]],"ordered":true}
+{"id":"t2s-16","question":"2026-09-17 入职多少人？","expected":[["5"]],"ordered":false}
+{"id":"t2s-17","question":"2026-09-24 入职多少人？","expected":[["11"]],"ordered":false}
+{"id":"t2s-18","question":"技术部各角色人数","expected":[["employee","4"],["admin","2"],["leader","2"]],"ordered":false}
+{"id":"t2s-19","question":"各部门管理员人数","expected":[["技术部","2"]],"expected_any":[[["技术部","2"]],[["人事部","0"],["技术部","2"],["行政部","0"],["财务部","0"],["销售部","0"]]],"ordered":false}
+{"id":"t2s-20","question":"销售部有多少领导？","expected":[["1"]],"ordered":false}

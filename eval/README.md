@@ -50,3 +50,14 @@
 4. 延迟包含 embedding / 数据库 / rerank，不能把 P95 差异归因于融合算法。复跑时注意缓存预热顺序。
 
 更严谨的做法是扩大题集、加入难负例和更多部门/文档，再比较 Recall@k、MRR、nDCG；当前结果只作为回归基线。
+
+## Text2SQL
+
+| 文件 | 作用 |
+|---|---|
+| `text2sql_set.jsonl` | 20 道员工统计问题，含期望结果 |
+| `run_text2sql.py` | 调 LLM 生成 SQL，再走 AST 校验、部门范围、只读执行，比对结果 |
+
+```bash
+.venv\Scripts\python.exe eval\run_text2sql.py
+```

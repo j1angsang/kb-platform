@@ -44,6 +44,8 @@ uv sync
 | `LLM_SUPPORTS_VISION` | 否 | 纯文本模型须显式设为 `false`，否则启动报错 |
 | `STORAGE_BACKEND` | 否 | `local`（默认）或 `s3`；s3 还需配 `S3_*` |
 | `S3_ENDPOINT` / `S3_ACCESS_KEY` / `S3_SECRET_KEY` / `S3_BUCKET` | s3 时是 | MinIO/S3 连接信息，见 `.env.example` |
+| `TEXT2SQL_MAX_ROWS` / `TEXT2SQL_TIMEOUT_MS` | 否 | 默认 50 行 / 3000ms |
+| `TEXT2SQL_DATABASE_URL` | 否 | 只读角色连接；留空用主库 + 只读事务 |
 
 完整变量与默认值见 `.env.example`。启动时 `config/settings.py` 一次性校验必填项，缺项会一次列全。
 
@@ -173,6 +175,8 @@ curl -s -X POST http://127.0.0.1:8005/files/upload \
 - [切分与 Prompt injection 防护](docs/CHUNKING_AND_INJECTION.md)
 - [对象存储改造报告](docs/OBJECT_STORAGE_REPORT.md)
 - [对象存储代码讲解](docs/OBJECT_STORAGE_CODE_WALKTHROUGH.md)
+- [受限 Text2SQL 改造报告](docs/TEXT2SQL_REPORT.md)
+- [受限 Text2SQL 代码讲解](docs/TEXT2SQL_CODE_WALKTHROUGH.md)
 - [Agent 架构](agents/ARCHITECTURE.md)
 
 ## 评测
@@ -181,6 +185,12 @@ curl -s -X POST http://127.0.0.1:8005/files/upload \
 
 ```bash
 .venv\Scripts\python.exe eval\run_retrieval.py --fusion both --rerank both
+```
+
+Text2SQL 评测（20 题，调用 LLM 生成 SQL）：
+
+```bash
+.venv\Scripts\python.exe eval\run_text2sql.py
 ```
 
 ## 对象存储（MinIO/S3）
@@ -223,6 +233,24 @@ docker compose up -d --build
 
 边界：分片上传的临时分片、PDF 页图等派生文件仍落在本地缓存；本实现面向单实例，多实例部署需要把分片和派生文件也迁到共享存储。
 
+## 受限 Text2SQL
+
+`POST /analytics/query` 接收自然语言问题，返回只读统计结果：
+
+```json
+{"question": "各部门人数排名"}
+```
+
+链路：LLM 生成 SQL → sqlglot AST 校验 → 部门范围 CTE → 只读事务执行 → 行数/超时限制。
+
+- 视图 `analytics.v_employee_directory(department, position, role, joined_at)` 不含姓名、密码、直属上级；
+- 员工只能看到本部门，领导/管理员可跨部门；部门条件由服务端注入，不来自 LLM；
+- 只允许单条 SELECT、单表、白名单列和函数；拒绝 JOIN/子查询/UNION/注释/多语句/`SELECT INTO`/`FOR UPDATE`；
+- 默认 `TEXT2SQL_MAX_ROWS=50`，`TEXT2SQL_TIMEOUT_MS=3000`；
+- 可选只读角色：执行 `scripts/create_text2sql_readonly.sql`，并配置 `TEXT2SQL_DATABASE_URL`；不配则用主库 + `READ ONLY` 事务。
+
+边界：Text2SQL 只做员工目录统计，不替代知识检索；不开放写操作。LLM 生成失败或 SQL 校验失败会返回明确错误，不会执行未校验 SQL。
+
 ## 测试
 
 完整版使用 pytest + 独立测试库；本展示仓库为控制体积，未包含 `tests/`。
@@ -233,13 +261,13 @@ docker compose up -d --build
 |---|---|
 | main.py | App 组装、startup、配置校验、健康检查路由 |
 | config/ | DB / LLM / 日志 / 配置校验 / 限流 / 安全头 |
-| routers/ | auth / files / knowledge / chat / health |
-| services/ | 上传落盘、存储路径、权限集中化；`object_storage.py` 是 local/S3 适配 |
-| scripts/ | 运维脚本，`backfill_object_storage.py` 回填历史文件到对象存储 |
+| routers/ | auth / files / knowledge / chat / analytics / health |
+| services/ | 上传落盘、存储路径、权限集中化；`object_storage.py` 是 local/S3 适配，`text2sql.py` 是受限 SQL 生成/校验/执行 |
+| scripts/ | 运维脚本：对象存储回填、Text2SQL 只读角色创建 |
 | docker-compose.yml / Dockerfile | PostgreSQL + Redis + MinIO + App 一键启动 |
 | rag/ | parser / embeddings / fusion / store / indexer / bm25 |
-| docs/ | 检索融合、切分与注入防护、对象存储的改造报告和代码讲解 |
-| eval/ | 检索评测题集、指标与可复跑脚本 |
+| docs/ | 检索融合、切分与注入防护、对象存储、Text2SQL 的改造报告和代码讲解 |
+| eval/ | 检索评测题集、Text2SQL 评测题集、指标与可复跑脚本 |
 | agents/ | create_agent + 钩子，企业问答编排，见 [agents/ARCHITECTURE.md](agents/ARCHITECTURE.md) |
 | tools/ | 知识检索、文档列表、员工查询工具 |
 | crud/ | 文件 / 知识库数据库操作 |
