@@ -4,7 +4,7 @@ import time
 from weakref import WeakValueDictionary
 
 from config.db_conf import AsyncSessionLocal
-from services.storage import STORAGE_DIR
+from services.object_storage import object_storage
 from crud import file as file_crud
 from crud import knowledge as knowledge_crud
 from rag.parser import parse_file
@@ -80,7 +80,7 @@ async def _index_document_inner(doc_id: int) -> None:
             file = await file_crud.get_file(db, doc.file_id)
             if file is None:
                 raise ValueError(f"文件实体不存在: doc={doc_id}, file_id={doc.file_id}")
-            path = STORAGE_DIR / file.stored_path
+            path = await object_storage.ensure_local_async(file.stored_path)
             if not path.exists():
                 raise ValueError(f"磁盘实体丢失: {path}")
 
@@ -148,11 +148,12 @@ async def _reindex_document_inner(doc_id: int) -> None:
             if file is None:
                 logger.warning("reindex doc=%s file_id=%s skip=file_not_found", doc_id, file_id)
                 return
-            path = STORAGE_DIR / file.stored_path
-            if not path.exists():
+            try:
+                path = await object_storage.ensure_local_async(file.stored_path)
+            except FileNotFoundError:
                 logger.warning(
-                    "reindex doc=%s file_id=%s skip=storage_file_missing path=%s",
-                    doc_id, file_id, path,
+                    "reindex doc=%s file_id=%s skip=storage_file_missing stored_path=%s",
+                    doc_id, file_id, file.stored_path,
                 )
                 return
             chunks = parse_file(path)

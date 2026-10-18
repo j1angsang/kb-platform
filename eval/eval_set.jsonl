@@ -1,0 +1,21 @@
+{"id":"k-01","category":"knowledge","question":"年假有几天？","department":"人事部","expected_files":["请假与休假管理规定.md"],"expected_keywords":["5 天","10 天"],"expect_refusal":false,"notes":"满1年5天/满3年7天/满5年10天"}
+{"id":"k-02","category":"knowledge","question":"报销需要哪些材料？有提交时限吗？","department":"财务部","expected_files":["报销管理制度.md"],"expected_keywords":["正规发票","30 天"],"expect_refusal":false,"notes":"正规发票/消费明细/审批单；30天内提交"}
+{"id":"k-03","category":"knowledge","question":"出差住宿标准是多少？","department":"财务部","expected_files":["差旅费管理办法.md"],"expected_keywords":["500","350"],"expect_refusal":false,"notes":"一线500/晚，二线350/晚"}
+{"id":"k-04","category":"knowledge","question":"迟到或早退会怎么扣钱？","department":"人事部","expected_files":["考勤管理制度.md"],"expected_keywords":["30 分钟","50 元"],"expect_refusal":false,"notes":"30分钟以内每次扣50元"}
+{"id":"k-05","category":"knowledge","question":"IT 紧急故障多久响应？哪些算紧急故障？","department":"技术部","expected_files":["IT服务台支持流程.md"],"expected_keywords":["30 分钟","紧急"],"expect_refusal":false,"notes":"紧急故障30分钟内响应"}
+{"id":"k-06","category":"knowledge","question":"采购多少钱需要走什么审批？","department":"财务部","expected_files":["采购申请与付款流程.md"],"expected_keywords":["5000","20000"],"expect_refusal":false,"notes":"5000以下部门负责人；5000-20000加财务；20000以上加总经理"}
+{"id":"k-07","category":"knowledge","question":"调休要在多久内使用？逾期会怎样？","department":"人事部","expected_files":["加班与调休管理规定.md"],"expected_keywords":["3 个月","逾期"],"expect_refusal":false,"notes":"3个月内使用，逾期视为自动放弃"}
+{"id":"k-08","category":"knowledge","question":"一般客户投诉多久响应、多久给方案？","department":"销售部","expected_files":["客户投诉处理流程.md"],"expected_keywords":["24 小时","3 个工作日"],"expect_refusal":false,"notes":"一般投诉24小时响应、3个工作日给方案"}
+{"id":"l-01","category":"lexical","question":"年假 5 天 10 天 满 5 年","department":"人事部","expected_files":["请假与休假管理规定.md"],"expected_keywords":["5 天","10 天"],"expect_refusal":false,"notes":"字面查询，检验 BM25 通道"}
+{"id":"l-02","category":"lexical","question":"正规发票 消费明细 审批单 30 天","department":"财务部","expected_files":["报销管理制度.md"],"expected_keywords":["正规发票","30 天"],"expect_refusal":false,"notes":"字面查询"}
+{"id":"l-03","category":"lexical","question":"一线 500 二线 350 住宿","department":"财务部","expected_files":["差旅费管理办法.md"],"expected_keywords":["500","350"],"expect_refusal":false,"notes":"金额字面查询"}
+{"id":"l-04","category":"lexical","question":"迟到 30 分钟 扣 50 元","department":"人事部","expected_files":["考勤管理制度.md"],"expected_keywords":["30 分钟","50 元"],"expect_refusal":false,"notes":"金额/时长字面查询"}
+{"id":"l-05","category":"lexical","question":"紧急故障 30 分钟 无法登录 网络中断","department":"技术部","expected_files":["IT服务台支持流程.md"],"expected_keywords":["30 分钟","紧急"],"expect_refusal":false,"notes":"故障类型字面查询"}
+{"id":"l-06","category":"lexical","question":"采购 5000 20000 总经理 审批","department":"财务部","expected_files":["采购申请与付款流程.md"],"expected_keywords":["5000","20000"],"expect_refusal":false,"notes":"金额阶梯字面查询"}
+{"id":"l-07","category":"lexical","question":"调休 3 个月 逾期 自动放弃","department":"人事部","expected_files":["加班与调休管理规定.md"],"expected_keywords":["3 个月","逾期"],"expect_refusal":false,"notes":"期限字面查询"}
+{"id":"l-08","category":"lexical","question":"客户投诉 24 小时 3 个工作日 方案","department":"销售部","expected_files":["客户投诉处理流程.md"],"expected_keywords":["24 小时","3 个工作日"],"expect_refusal":false,"notes":"时限字面查询"}
+{"id":"n-01","category":"no_answer","question":"公司食堂午餐几点开始供应？","department":"技术部","expected_files":[],"expected_keywords":[],"expect_refusal":true,"notes":"现有文档未提及食堂"}
+{"id":"n-02","category":"no_answer","question":"公司有班车吗？班车路线是什么？","department":"技术部","expected_files":[],"expected_keywords":[],"expect_refusal":true,"notes":"现有文档未提及班车"}
+{"id":"n-03","category":"no_answer","question":"公司年会什么时候举办？","department":"技术部","expected_files":[],"expected_keywords":[],"expect_refusal":true,"notes":"现有文档未提及年会"}
+{"id":"n-04","category":"no_answer","question":"今天深圳天气怎么样？","department":"技术部","expected_files":[],"expected_keywords":[],"expect_refusal":true,"notes":"与公司知识库无关"}
+{"id":"n-05","category":"no_answer","question":"帮我写一段 Python 快速排序代码。","department":"技术部","expected_files":[],"expected_keywords":[],"expect_refusal":true,"notes":"超出知识库范围"}

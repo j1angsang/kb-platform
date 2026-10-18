@@ -13,11 +13,13 @@ from fastapi.responses import FileResponse, JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from routers.auth import get_current_user
 from models.file import FileInfo
+from models.chunk import UploadTask
 from models.user import User
 from config.db_conf import AsyncSessionLocal, get_db
 from config.rate_limit import check_or_429, client_ip, make_limiter
 from rag.store import store  # 软删/恢复/物理清理后通知 BM25 快照失效
 from services.storage import STORAGE_DIR, delete_storage_artifacts
+from services.object_storage import object_storage
 from services.upload import (
     CHUNK_DIR,
     MAX_CHUNK_SIZE,
@@ -217,20 +219,41 @@ async def upload_file(
         )
         raise HTTPException(status_code=500, detail="文件写入失败")
 
-    record, inserted = await file_crud.create_file_atomic(
-        db=db,
-        filename=filename,
-        size_bytes=size,
-        content_type=content_type,
-        md5=md5_hex,
-        stored_path=stored_name,
-        user_id=current_user.id,
-        department=current_user.department or "未分配",
-        is_shared=can_shared,
-        shared_departments=share_depts,
-    )
+    try:
+        record, inserted = await file_crud.create_file_atomic(
+            db=db,
+            filename=filename,
+            size_bytes=size,
+            content_type=content_type,
+            md5=md5_hex,
+            stored_path=stored_name,
+            user_id=current_user.id,
+            department=current_user.department or "未分配",
+            is_shared=can_shared,
+            shared_departments=share_depts,
+        )
+    except Exception:
+        dest.unlink(missing_ok=True)
+        raise
+
     if inserted:
-        await db.commit()
+        try:
+            await object_storage.upload_async(stored_name, dest)
+        except Exception:
+            await db.rollback()
+            dest.unlink(missing_ok=True)
+            logger.exception(
+                "upload.object_storage_failed filename=%s stored_name=%s",
+                file.filename, stored_name,
+            )
+            raise HTTPException(status_code=500, detail="对象存储写入失败")
+        try:
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            await object_storage.delete_async(stored_name)
+            dest.unlink(missing_ok=True)
+            raise
         logger.info(
             "upload.file_done filename=%s user_id=%s file_id=%s size=%d md5=%s elapsed_ms=%.1f",
             record.filename, current_user.id, record.id, record.size_bytes, record.md5,
@@ -254,6 +277,15 @@ async def upload_file(
             "upload.file_fast_upload_repaired filename=%s user_id=%s existing_file_id=%s md5=%s",
             file.filename, current_user.id, existing.id, md5_hex,
         )
+    try:
+        await object_storage.upload_async(existing.stored_path, existing_path)
+    except Exception:
+        await db.rollback()
+        logger.exception(
+            "upload.object_storage_failed filename=%s stored_name=%s action=fast_upload",
+            file.filename, existing.stored_path,
+        )
+        raise HTTPException(status_code=500, detail="对象存储写入失败")
     if can_shared:
         existing.is_shared = True
         existing.shared_departments = share_depts
@@ -654,26 +686,37 @@ async def complete_upload(payload: UploadCompleteIn, db: AsyncSession = Depends(
         )
         dest.unlink(missing_ok=True)
         raise HTTPException(status_code=400, detail="文件校验失败：合并大小与声明不一致")
-    record, inserted = await file_crud.create_file_atomic(
-        db=db,
-        filename=payload.filename,
-        size_bytes=total,
-        content_type=payload.content_type,
-        md5=md5_hex,
-        stored_path=stored_name,
-        user_id=current_user.id,
-        department=current_user.department or "未分配",
-        is_shared=can_shared,
-        shared_departments=share_depts,
-    )
+    try:
+        record, inserted = await file_crud.create_file_atomic(
+            db=db,
+            filename=payload.filename,
+            size_bytes=total,
+            content_type=payload.content_type,
+            md5=md5_hex,
+            stored_path=stored_name,
+            user_id=current_user.id,
+            department=current_user.department or "未分配",
+            is_shared=can_shared,
+            shared_departments=share_depts,
+        )
+    except Exception:
+        dest.unlink(missing_ok=True)
+        raise
 
-    shutil.rmtree(chunk_dir, ignore_errors=True)
-    await file_crud.delete_chunks(db, payload.upload_id)
-    await file_crud.delete_upload_task(db, payload.upload_id)
-
-    if not inserted:
+    restored = False
+    if inserted:
+        try:
+            await object_storage.upload_async(stored_name, dest)
+        except Exception:
+            await db.rollback()
+            dest.unlink(missing_ok=True)
+            logger.exception(
+                "upload.object_storage_failed upload_id=%s stored_name=%s action=complete",
+                payload.upload_id, stored_name,
+            )
+            raise HTTPException(status_code=500, detail="对象存储写入失败")
+    else:
         existing = record
-        restored = False
         if existing.deleted_at is not None:
             existing.deleted_at = None  # 同内容重传恢复软删除行
             restored = True
@@ -688,9 +731,24 @@ async def complete_upload(payload: UploadCompleteIn, db: AsyncSession = Depends(
                 "upload.complete_fast_upload_repaired upload_id=%s existing_file_id=%s md5=%s",
                 payload.upload_id, existing.id, md5_hex,
             )
+        try:
+            await object_storage.upload_async(existing.stored_path, existing_path)
+        except Exception:
+            await db.rollback()
+            logger.exception(
+                "upload.object_storage_failed upload_id=%s stored_name=%s action=complete_fast",
+                payload.upload_id, existing.stored_path,
+            )
+            raise HTTPException(status_code=500, detail="对象存储写入失败")
         if can_shared:
             existing.is_shared = True
             existing.shared_departments = share_depts
+
+    shutil.rmtree(chunk_dir, ignore_errors=True)
+    await file_crud.delete_chunks(db, payload.upload_id)
+    await file_crud.delete_upload_task(db, payload.upload_id)
+
+    if not inserted:
         await db.commit()
         logger.info(
             "upload.complete_fast_upload_hit upload_id=%s user_id=%s existing_file_id=%s "
@@ -724,8 +782,13 @@ async def download_file(file_id: int, request: Request, db: AsyncSession = Depen
         raise HTTPException(status_code=403, detail="禁止盗链：请从本站页面下载")
     if record.deleted_at is not None:
         raise HTTPException(status_code=404, detail="文件不存在")
-    path = STORAGE_DIR / record.stored_path
-    if not path.exists():
+    try:
+        path = await object_storage.ensure_local_async(record.stored_path)
+    except FileNotFoundError:
+        logger.warning(
+            "download.file_missing file_id=%s stored_path=%s backend=%s",
+            record.id, record.stored_path, object_storage.backend,
+        )
         raise HTTPException(status_code=404, detail="文件已丢失，元数据与实体不一致")
     if is_employee(current_user) and not check_department_access(
         current_user,

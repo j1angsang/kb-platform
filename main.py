@@ -20,6 +20,7 @@ setup_logging()
 from config.settings import validate_settings
 from config.security_headers import SecurityHeadersMiddleware
 from services.memory import close_memory_runtime, init_memory_runtime
+from services.object_storage import object_storage
 
 validate_settings()
 
@@ -138,6 +139,21 @@ async def on_startup():
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))
+    if object_storage.enabled:
+        for attempt in range(1, 11):
+            try:
+                await asyncio.to_thread(object_storage.healthcheck)
+                logger.info("object storage ready backend=%s bucket=%s", object_storage.backend, object_storage.bucket)
+                break
+            except Exception as exc:
+                if attempt == 10:
+                    logger.error(
+                        "object storage unavailable endpoint=%s bucket=%s error=%s；"
+                        "服务继续启动，上传会失败，/health/ready 返回 503",
+                        object_storage.backend, object_storage.bucket, exc,
+                    )
+                else:
+                    await asyncio.sleep(2)
     # 先把上次进程留下的 indexing 处理成可重试，再起恢复循环
     await repair_stuck_indexing_on_startup()
     # checkpointer/Store 启动装配：幂等建 LangGraph 表，失败即退出

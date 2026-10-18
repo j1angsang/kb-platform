@@ -13,3 +13,5 @@ evaluation/__pycache__/
 .tmp_*/
 *.tmp
 *.bak
+
+eval/results/latest.json

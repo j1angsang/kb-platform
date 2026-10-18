@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from fastapi import APIRouter
@@ -7,6 +8,7 @@ from sqlalchemy import text
 from config.db_conf import AsyncSessionLocal
 from rag.embeddings import EMBEDDING_API_KEY
 from rag.store import store
+from services.object_storage import object_storage
 
 router = APIRouter(tags=["健康检查"])
 logger = logging.getLogger(__name__)
@@ -61,6 +63,15 @@ async def readiness() -> JSONResponse:
         checks["embedding_key"] = "ok"
     else:
         checks["embedding_key"] = "error: embedding_key_missing"
+
+    try:
+        storage_status = await asyncio.to_thread(object_storage.healthcheck)
+        checks["object_storage"] = (
+            storage_status if storage_status.startswith("ok") else f"ok({storage_status})"
+        )
+    except Exception:
+        logger.exception("health.ready object_storage check failed")
+        checks["object_storage"] = "error: object_storage_unavailable"
 
     healthy = all(value.startswith("ok") for value in checks.values())
     return JSONResponse(

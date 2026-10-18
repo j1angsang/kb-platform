@@ -1,7 +1,12 @@
+import logging
 import os
 import shutil
 from pathlib import Path
 from uuid import uuid4
+
+from services.object_storage import object_storage
+
+logger = logging.getLogger(__name__)
 
 # 上一级 = 项目根目录
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -49,6 +54,11 @@ def delete_storage_artifacts(stored_name: str) -> None:
             shutil.rmtree(resolved)
         else:
             resolved.unlink()
+    try:
+        object_storage.delete(name)
+    except Exception:
+        logger.exception("object_storage.delete_failed stored_name=%s", name)
+        raise
 
 
 def to_absolute(path: str | Path) -> Path:

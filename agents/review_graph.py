@@ -44,9 +44,11 @@ async def _precheck_node(state: ReviewState) -> dict:
             if file is None:
                 notes.append("文件元数据不存在")
             else:
-                from services.storage import STORAGE_DIR
+                from services.object_storage import object_storage
 
-                if not (STORAGE_DIR / file.stored_path).exists():
+                try:
+                    await object_storage.ensure_local_async(file.stored_path)
+                except FileNotFoundError:
                     notes.append("磁盘实体丢失")
     return {"precheck_ok": not notes, "precheck_notes": notes}
 

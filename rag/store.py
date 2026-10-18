@@ -12,6 +12,7 @@ from config.db_conf import AsyncSessionLocal
 from models.knowledge_chunk import KnowledgeChunk
 from rag.bm25 import BM25Index
 from rag.embeddings import embed_image, embed_query, embed_texts
+from rag.fusion import normalize_scores, rrf_fuse
 from rag.rerank import RERANK_ENABLED, RERANK_MIN_SCORE, RERANK_TOP_N, rerank
 from services.storage import STORAGE_DIR
 
@@ -37,11 +38,21 @@ if VECTOR_WEIGHT < 0 or BM25_WEIGHT < 0 or (VECTOR_WEIGHT + BM25_WEIGHT) <= 0:
         f"当前 vector={VECTOR_WEIGHT} bm25={BM25_WEIGHT}"
     )
 
+SEARCH_FUSION = (os.getenv("SEARCH_FUSION") or "rrf").strip().lower()
+if SEARCH_FUSION not in ("rrf", "weighted"):
+    raise RuntimeError(
+        f"SEARCH_FUSION 非法：{SEARCH_FUSION!r}，只允许 rrf|weighted"
+    )
+RRF_K = int(os.getenv("RRF_K", "60"))
+if RRF_K < 1:
+    raise RuntimeError(f"RRF_K 必须 >= 1，当前 {RRF_K}")
+
 logger = logging.getLogger(__name__)
 
 
 def select_relevant_hits(hits: list[dict], top_k: int = 3) -> list[dict]:
     started = time.perf_counter()
+    hits = [h for h in hits if h.get("metadata", {}).get("type") != "image"]
     # 重排失败 = 本轮不注入知识，不能退回旧排序放行
     if any(h.get("rerank_fallback") for h in hits):
         logger.warning(
@@ -69,6 +80,25 @@ def select_relevant_hits(hits: list[dict], top_k: int = 3) -> list[dict]:
             SEARCH_MIN_SCORE, SEARCH_MAX_DROP,
         )
         return []
+    if SEARCH_FUSION == "rrf":
+        # 门控用 _relevance_score，不用 RRF 分
+        ordered = sorted(hits, key=lambda h: h.get("fusion_score", 0.0), reverse=True)
+
+        def _relevance(hit: dict) -> float:
+            return float(hit.get("_relevance_score", hit.get("score", 0.0)))
+
+        top_relevance = _relevance(ordered[0])
+        floor = max(SEARCH_MIN_SCORE, top_relevance - SEARCH_MAX_DROP)
+        selected = [h for h in ordered if _relevance(h) >= floor][:top_k]
+        logger.info(
+            "rag.select mode=rrf hits=%d selected=%d top_relevance=%.4f floor=%.4f "
+            "fusion_scores=%s relevance_scores=%s duration_ms=%.1f",
+            len(hits), len(selected), top_relevance, floor,
+            [round(float(h.get("fusion_score", 0.0)), 6) for h in ordered[:5]],
+            [round(_relevance(h), 4) for h in ordered[:5]],
+            (time.perf_counter() - started) * 1000,
+        )
+        return selected
     hits = sorted(hits, key=lambda h: h.get("score", 0), reverse=True)
     top_score = float(hits[0].get("score", 0))
     selected = []
@@ -87,7 +117,7 @@ def select_relevant_hits(hits: list[dict], top_k: int = 3) -> list[dict]:
             break
     selected_scores = [round(float(h.get("score", 0)), 4) for h in selected]
     logger.info(
-        "rag.select hits=%d selected=%d top_score=%.4f truncated=%s reason=%s "
+        "rag.select mode=weighted hits=%d selected=%d top_score=%.4f truncated=%s reason=%s "
         "min_score=%.2f max_drop=%.3f selected_scores=%s duration_ms=%.1f",
         len(hits), len(selected), top_score, len(selected) < len(hits), reason,
         SEARCH_MIN_SCORE, SEARCH_MAX_DROP, selected_scores,
@@ -361,7 +391,19 @@ class PgVectorStore:
                     "metadata": self._metadata(row),
                     "score": 1 - float(dist) / 2,
                 })
-            vector_by_id = {h["id"]: h for h in vector_hits}
+            text_vector_hits = [
+                h for h in vector_hits if h["metadata"].get("type") != "image"
+            ]
+            image_hits = [
+                h for h in vector_hits if h["metadata"].get("type") == "image"
+            ]
+            for h in image_hits:
+                h["fusion_score"] = 0.0
+                h["_relevance_score"] = round(h["score"], 4)
+                h["_vector_score"] = round(h["score"], 4)
+                h["_bm25_score"] = 0.0
+                h["_bm25_norm"] = 0.0
+            vector_by_id = {h["id"]: h for h in text_vector_hits}
             vector_ms = (time.perf_counter() - vector_started) * 1000
 
             bm25_started = time.perf_counter()
@@ -376,7 +418,7 @@ class PgVectorStore:
                     if cid not in vector_by_id:
                         candidate_ids.append(cid)
 
-            fused = []
+            candidates = []
             for cid in candidate_ids:
                 vh = vector_by_id.get(cid)
                 if vh is None:
@@ -387,51 +429,92 @@ class PgVectorStore:
                     if not self._matches_department(meta, department):
                         continue
                     text = bm_doc.get("text", "")
+                    v_score = 0.0
                 else:
                     meta = vh["metadata"]
                     text = vh["text"]
+                    v_score = vh["score"]
 
                 bm = bm25_scores.get(cid, 0.0)
-                v_score = vh["score"] if vh else 0.0
+                bm_norm = bm / max_bm if (use_bm25 and max_bm > 0) else 0.0
                 if use_bm25 and bm > 0 and max_bm > 0:
-                    bm_norm = bm / max_bm
-                    if vh is not None:
-                        weight_sum = VECTOR_WEIGHT + BM25_WEIGHT
-                        fused_score = (
+                    if v_score > 0:
+                        relevance_score = (
                             VECTOR_WEIGHT * v_score + BM25_WEIGHT * bm_norm
-                        ) / weight_sum
+                        ) / (VECTOR_WEIGHT + BM25_WEIGHT)
                     else:
-                        fused_score = bm_norm * 0.95
+                        relevance_score = bm_norm * 0.95
                 else:
-                    fused_score = v_score
-
-                fused.append({
+                    relevance_score = v_score
+                candidates.append({
                     "id": cid,
                     "text": text,
                     "metadata": meta,
-                    "score": round(fused_score, 4),
                     "_vector_score": round(v_score, 4),
                     "_bm25_score": round(bm, 4),
+                    "_bm25_norm": round(bm_norm, 4),
+                    "_relevance_score": round(relevance_score, 4),
                 })
 
-            fused.sort(key=lambda x: x["score"], reverse=True)
+            if SEARCH_FUSION == "rrf":
+                vector_ranking = [h["id"] for h in text_vector_hits]
+                bm25_ranking = [cid for cid, _ in bm25_hits]
+                rrf_scores = rrf_fuse(
+                    [vector_ranking, bm25_ranking],
+                    weights=[VECTOR_WEIGHT, BM25_WEIGHT],
+                    k=RRF_K,
+                )
+                visible_scores = {
+                    c["id"]: rrf_scores.get(c["id"], 0.0) for c in candidates
+                }
+                normalized = normalize_scores(visible_scores)
+                for c in candidates:
+                    c["fusion_score"] = round(visible_scores[c["id"]], 6)
+                    c["score"] = round(normalized.get(c["id"], 0.0), 4)
+                candidates.sort(
+                    key=lambda h: (h["fusion_score"], h["_relevance_score"]),
+                    reverse=True,
+                )
+            else:
+                for c in candidates:
+                    v_score = c["_vector_score"]
+                    bm = c["_bm25_score"]
+                    bm_norm = c["_bm25_norm"]
+                    if use_bm25 and bm > 0 and max_bm > 0:
+                        if v_score > 0:
+                            fused_score = (
+                                VECTOR_WEIGHT * v_score + BM25_WEIGHT * bm_norm
+                            ) / (VECTOR_WEIGHT + BM25_WEIGHT)
+                        else:
+                            fused_score = bm_norm * 0.95
+                    else:
+                        fused_score = v_score
+                    c["score"] = round(fused_score, 4)
+                    c["fusion_score"] = c["score"]
+                candidates.sort(key=lambda h: h["score"], reverse=True)
+
             if RERANK_ENABLED:
-                text_pool = [h for h in fused if h["metadata"].get("type") != "image"][:RERANK_TOP_N]
-                image_pool = [h for h in fused if h["metadata"].get("type") == "image"]
-                fused = [*(await rerank(query, text_pool, top_n=RERANK_TOP_N)), *image_pool]
+                text_pool = candidates[:RERANK_TOP_N]
+                fused = [*(await rerank(query, text_pool, top_n=RERANK_TOP_N)), *image_hits]
+            else:
+                fused = [*candidates, *image_hits]
             text_result = [h for h in fused if h["metadata"].get("type") != "image"][:top_k]
             image_result = [h for h in fused if h["metadata"].get("type") == "image"][:IMAGE_CANDIDATE_TOP_K]
             result = [*text_result, *image_result]
             top_vector = max((h.get("score", 0) for h in vector_hits), default=None)
             top_bm25 = max(bm25_scores.values(), default=None)
             top_fused = max((h["score"] for h in result), default=None)
+            top_fusion = max((h.get("fusion_score", 0) for h in candidates), default=None)
+            top_relevance = max((h.get("_relevance_score", 0) for h in candidates), default=None)
             logger.info(
-                "rag.search query=%s department=%s vector_hits=%d bm25_hits=%d "
-                "candidates=%d returned=%d top_vector_score=%s top_bm25_score=%s "
-                "top_fused_score=%s vector_ms=%.1f bm25_ms=%.1f duration_ms=%.1f "
-                "weights=%.2f/%.2f min_score=%.3f max_drop=%.3f",
-                query, department or "-all-", len(vector_hits), len(bm25_hits),
-                len(candidate_ids), len(result), top_vector, top_bm25, top_fused,
+                "rag.search query=%s department=%s fusion=%s rrf_k=%d "
+                "vector_hits=%d bm25_hits=%d candidates=%d returned=%d "
+                "top_vector_score=%s top_bm25_score=%s top_fused_score=%s "
+                "top_fusion_score=%s top_relevance=%s vector_ms=%.1f bm25_ms=%.1f "
+                "duration_ms=%.1f weights=%.2f/%.2f min_score=%.3f max_drop=%.3f",
+                query, department or "-all-", SEARCH_FUSION, RRF_K,
+                len(vector_hits), len(bm25_hits), len(candidate_ids), len(result),
+                top_vector, top_bm25, top_fused, top_fusion, top_relevance,
                 vector_ms, bm25_ms, (time.perf_counter() - started) * 1000,
                 VECTOR_WEIGHT, BM25_WEIGHT, SEARCH_MIN_SCORE, SEARCH_MAX_DROP,
             )

@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 rate_limit_rejected_total = Counter(
     "rate_limit_rejected_total", "被限流拒绝的请求总数",
 )
+injection_suspected_total = Counter(
+    "injection_suspected_total", "疑似 prompt injection 的次数",
+    ["channel"],  # channel=user / retrieved
+)
 embedding_cache_hit_total = Counter(
     "embedding_cache_hit_total", "查询向量 Redis 缓存命中次数",
 )

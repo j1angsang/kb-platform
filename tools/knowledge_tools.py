@@ -10,6 +10,12 @@ from config.db_conf import AsyncSessionLocal
 from crud.file import shared_departments_clause
 from models import FileInfo, KnowledgeDoc
 from rag.store import select_relevant_hits, store
+from services.prompt_guard import (
+    INJECTION_INSTRUCTION,
+    scan_injection,
+    wrap_knowledge,
+    wrap_untrusted,
+)
 from tools._retry import retry_async, user_readable_error
 
 logger = logging.getLogger(__name__)
@@ -19,7 +25,11 @@ logger = logging.getLogger(__name__)
 
 @tool(parse_docstring=True)
 async def search_knowledge(query: str, state: Annotated[dict, InjectedState]) -> str:
-    """语义检索企业知识库，返回知识原文和来源文件；入参 query 是检索关键词/问题。"""
+    """语义检索企业知识库，返回知识原文和来源文件。
+
+    Args:
+        query: 检索关键词或完整问题。
+    """
     # 身份从可信 State 取，LLM 不可见
     user_department = state["user_department"]
     allow_all = state.get("allow_all_departments", False)
@@ -29,10 +39,23 @@ async def search_knowledge(query: str, state: Annotated[dict, InjectedState]) ->
         if not hits:
             return "未检索到相关内容。请换关键词，或联系管理员补充知识。"
         lines = []
-        for h in hits:
+        for i, h in enumerate(hits, 1):
             src = f"{h['filename']}" + (f" 第{h['page']}页" if h.get("page") else "") + (f" [{h['sheet']}]" if h.get("sheet") else "")
-            lines.append(f"- [{src}] {h['text']}")
-        return "检索结果：\n" + "\n".join(lines)
+            flags = scan_injection(h.get("text", ""))
+            if flags:
+                from services.metrics import injection_suspected_total
+
+                injection_suspected_total.labels(channel="tool").inc()
+                logger.warning(
+                    "knowledge_tools.injection_suspected tool=search_knowledge filename=%s rules=%s",
+                    h.get("filename"), flags,
+                )
+            lines.append(wrap_untrusted(
+                f"[{src}] {h['text']}",
+                index=i,
+                source=src or "knowledge",
+            ))
+        return INJECTION_INSTRUCTION + "\n检索结果：\n" + wrap_knowledge(lines)
     except Exception as e:
         # 给模型可读降级文案，异常细节不发给 LLM
         logger.exception("knowledge_tools.search_failed query_len=%d top_k=%d", len(query), top_k)
@@ -108,7 +131,11 @@ async def check_doc_status(
     state: Annotated[dict, InjectedState],
     tool_call_id: Annotated[str, InjectedToolCallId],
 ) -> ToolMessage:
-    """按文档 ID 查询一份文档的审核/入库状态。"""
+    """按文档 ID 查询一份文档的审核/入库状态。
+
+    Args:
+        doc_id: 知识文档 ID。
+    """
     user_department = state["user_department"]
     allow_all = state.get("allow_all_departments", False)
     async with AsyncSessionLocal() as db:

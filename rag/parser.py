@@ -22,32 +22,153 @@ PDF_OCR_TEXT_MIN_CONFIDENCE = float(os.getenv("PDF_OCR_TEXT_MIN_CONFIDENCE", "0.
 # 单页 OCR 硬超时，降级保留图片块，不许卡死入库管线
 PDF_OCR_TEXT_TIMEOUT_SECONDS = float(os.getenv("PDF_OCR_TEXT_TIMEOUT_SECONDS", "120"))
 
+CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "500"))
+CHUNK_OVERLAP = int(os.getenv("CHUNK_OVERLAP", "50"))
+if CHUNK_SIZE < 100:
+    raise RuntimeError(f"CHUNK_SIZE 必须 >= 100，当前 {CHUNK_SIZE}")
+if not 0 <= CHUNK_OVERLAP < CHUNK_SIZE:
+    raise RuntimeError(
+        f"CHUNK_OVERLAP 必须满足 0 <= overlap < size，当前 {CHUNK_OVERLAP}/{CHUNK_SIZE}"
+    )
+
 
 class PdfWithoutTextLayerError(ValueError):
     """PDF 抽不出可用文本层，疑似扫描件，供 indexer 记账"""
 
 
-def chunk_text(text:str, size:int = 500,overlap:int=50)->list[str]:
-    paras = [p.strip() for p in re.split(r"\n\s*\n",text)if p.strip()]
-    chunks:list[str] = []
+_HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+_SENTENCE_SPLIT_RE = re.compile(r"(?<=[。！？!?；;])")
+
+
+def _split_sections(text: str) -> list[tuple[str, str]]:
+    """按 Markdown 标题切成 (正文, 章节路径)，没有标题就整篇一段。"""
+    sections: list[tuple[str, str]] = []
+    stack: list[tuple[int, str]] = []
+    buf: list[str] = []
+
+    def flush() -> None:
+        body = "\n".join(buf).strip()
+        if body:
+            sections.append((body, " > ".join(title for _, title in stack)))
+        buf.clear()
+
+    for line in text.splitlines():
+        match = _HEADING_RE.match(line.strip())
+        if match:
+            flush()
+            level = len(match.group(1))
+            title = match.group(2).strip()
+            while stack and stack[-1][0] >= level:
+                stack.pop()
+            stack.append((level, title))
+        else:
+            buf.append(line)
+    flush()
+    return sections or [(text.strip(), "")]
+
+
+def _hard_split(text: str, size: int, overlap: int) -> list[str]:
+    step = max(1, size - overlap)
+    return [
+        text[start:start + size]
+        for start in range(0, len(text), step)
+        if text[start:start + size].strip()
+    ]
+
+
+def _units_for_paragraph(paragraph: str, size: int) -> list[str]:
+    """长段落优先按句子切；表格行按行切，避免把一行数据拆开。"""
+    lines = [line.strip() for line in paragraph.splitlines() if line.strip()]
+    table_like = len(lines) > 1 and sum(1 for line in lines if " | " in line) >= max(1, len(lines) // 2)
+    if table_like:
+        return lines
+    if len(paragraph) <= size:
+        return [paragraph]
+    sentences = [part.strip() for part in _SENTENCE_SPLIT_RE.split(paragraph) if part.strip()]
+    return sentences or [paragraph]
+
+
+def _pack_units(units: list[str], size: int, overlap: int) -> list[str]:
+    chunks: list[str] = []
     buf = ""
-    for p in paras:
-        if len(p) > size:
+    for unit in units:
+        unit = unit.strip()
+        if not unit:
+            continue
+        if len(unit) > size:
             if buf:
                 chunks.append(buf)
                 buf = ""
-            start = 0
-            while start < len(p):
-                chunks.append(p[start:start+size])
-                start += size - overlap
-        elif len(buf) + len(p) + 1 <= size:
-            buf = f"{buf}\n{p}" if buf else p
-        else:
+            chunks.extend(_hard_split(unit, size, overlap))
+            continue
+        candidate = f"{buf}\n{unit}" if buf else unit
+        if len(candidate) <= size:
+            buf = candidate
+            continue
+        if buf:
             chunks.append(buf)
-            buf = p
+            tail = buf[-overlap:].strip() if overlap else ""
+        else:
+            tail = ""
+        if tail and len(tail) + 1 + len(unit) <= size:
+            buf = f"{tail}\n{unit}"
+        else:
+            buf = unit
     if buf:
         chunks.append(buf)
     return chunks
+
+
+def _chunk_section(body: str, heading_path: str, size: int, overlap: int) -> list[str]:
+    heading_path = (heading_path or "")[:80]
+    prefix = f"[{heading_path}]\n" if heading_path else ""
+    body_size = max(100, size - len(prefix))
+    paragraphs = [part.strip() for part in re.split(r"\n\s*\n", body) if part.strip()]
+    units: list[str] = []
+    for paragraph in paragraphs:
+        units.extend(_units_for_paragraph(paragraph, body_size))
+    return [f"{prefix}{chunk}" for chunk in _pack_units(units, body_size, overlap)]
+
+
+def _merge_chunks(chunks: list[str], size: int) -> list[str]:
+    """把相邻小节合并到接近 size，避免“每个标题一个 chunk”切得过碎。"""
+    merged: list[str] = []
+    buf = ""
+    for chunk in chunks:
+        if not chunk.strip():
+            continue
+        candidate = f"{buf}\n\n{chunk}" if buf else chunk
+        if len(candidate) <= size:
+            buf = candidate
+        else:
+            if buf:
+                merged.append(buf)
+            buf = chunk
+    if buf:
+        merged.append(buf)
+    return merged
+
+
+def chunk_text(text: str, size: int | None = None, overlap: int | None = None) -> list[str]:
+    """结构感知切分：先按标题分节，再按段落/句子/表格行打包。
+
+    - 标题路径写入 chunk 前缀，检索命中后能直接看到「哪一章」；
+    - 长段落优先在句号/问号/分号处断开，不再硬切字符；
+    - 表格行尽量按行保留，避免一行数据被拆到两个 chunk；
+    - 相邻小节会合并到接近 size，避免切得过碎。
+    """
+    chunk_size = CHUNK_SIZE if size is None else int(size)
+    chunk_overlap = CHUNK_OVERLAP if overlap is None else int(overlap)
+    if chunk_size < 100:
+        raise ValueError(f"chunk size 必须 >= 100，当前 {chunk_size}")
+    if not 0 <= chunk_overlap < chunk_size:
+        raise ValueError(
+            f"chunk overlap 必须满足 0 <= overlap < size，当前 {chunk_overlap}/{chunk_size}"
+        )
+    chunks: list[str] = []
+    for body, heading_path in _split_sections(text):
+        chunks.extend(_chunk_section(body, heading_path, chunk_size, chunk_overlap))
+    return _merge_chunks([chunk for chunk in chunks if chunk.strip()], chunk_size)
 
 def _read_text(path: Path) -> str:
     data = path.read_bytes()
@@ -280,6 +401,14 @@ def _parse_docx(path: Path) -> list[dict]:
     from docx.table import Table
     from docx.text.paragraph import Paragraph
 
+    def heading_prefix(paragraph: Paragraph) -> str:
+        style_name = str(getattr(getattr(paragraph, "style", None), "name", "") or "")
+        if "heading" not in style_name.lower() and "标题" not in style_name:
+            return ""
+        digits = re.findall(r"\d+", style_name)
+        level = int(digits[0]) if digits else 1
+        return "#" * max(1, min(level, 6)) + " "
+
     doc = Document(str(path))
     parts: list[str] = []
     # 必须按 body 顺序遍历，否则段落/表格交错时阅读顺序全乱
@@ -289,7 +418,7 @@ def _parse_docx(path: Path) -> list[dict]:
             para = Paragraph(child, doc)
             text = para.text.strip()
             if text:
-                parts.append(text)
+                parts.append(heading_prefix(para) + text)
         elif tag.endswith("}tbl"):
             table = Table(child, doc)
             for row in table.rows:
@@ -297,7 +426,7 @@ def _parse_docx(path: Path) -> list[dict]:
                 if row_text.strip(" |"):
                     parts.append(row_text)
     out: list[dict] = []
-    for i, piece in enumerate(chunk_text("\n".join(parts))):
+    for i, piece in enumerate(chunk_text("\n\n".join(parts))):
         out.append({"type": "text", "seq": i, "content": piece})
     return out
 
@@ -317,8 +446,8 @@ def _parse_xlsx(path: Path) -> list[dict]:
         text = "\n".join(rows)
         if not text.strip():
             continue
-        for piece in chunk_text(f"[{ws.title}]\n{text}"):
-            out.append({"type": "text", "seq": seq, "content": piece, "sheet": ws.title})
+        for piece in chunk_text(text):
+            out.append({"type": "text", "seq": seq, "content": f"[{ws.title}]\n{piece}", "sheet": ws.title})
             seq += 1
     wb.close()
     return out

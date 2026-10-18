@@ -6,6 +6,7 @@ from pathlib import Path
 from sqlalchemy import select
 
 from config.db_conf import AsyncSessionLocal
+from services.object_storage import object_storage
 from services.storage import STORAGE_DIR
 from models import FileInfo, KnowledgeDoc, User
 from routers.auth import hash_password
@@ -888,7 +889,9 @@ async def ensure_doc(db, owner, filename, department, content, shared=False):
     if file is None:
         suffix = Path(filename).suffix or ".txt"
         stored_name = uuid.uuid4().hex + suffix
-        (STORAGE_DIR / stored_name).write_bytes(data)
+        local_path = STORAGE_DIR / stored_name
+        local_path.write_bytes(data)
+        await object_storage.upload_async(stored_name, local_path)
         file = FileInfo(
             filename=filename,
             size_bytes=len(data),
