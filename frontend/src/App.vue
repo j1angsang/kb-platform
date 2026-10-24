@@ -5,14 +5,25 @@ import LoginPanel from './components/LoginPanel.vue'
 import ChatView from './views/ChatView.vue'
 import DocsView from './views/DocsView.vue'
 import FilesView from './views/FilesView.vue'
+import GraphView from './views/GraphView.vue'
 import ReviewView from './views/ReviewView.vue'
 
-type Tab = 'search' | 'docs' | 'review' | 'files'
+type Tab = 'search' | 'docs' | 'review' | 'files' | 'graph'
 
 const stored = getStoredUser()
 const user = ref<User | null>(getToken() ? stored : null)
 const online = ref(false)
 const activeTab = ref<Tab>(readTab())
+
+// 登录入口只保留首页那一处（static/index.html 的 CTA 登录框）。
+// 直接打开 /app 会走到这里，此时不该甩出一个和首页重复的孤立登录面板，
+// 而是带着回跳地址回首页登录区；登录成功后由首页跳回来。
+// redirectingToLogin 用来在跳转发生前压住 LoginPanel，避免闪一下。
+const redirectingToLogin = !user.value
+if (redirectingToLogin) {
+  const next = encodeURIComponent(location.pathname + location.search)
+  location.replace(`/?next=${next}#login`)
+}
 
 const isManager = computed(() => (user.value?.role || 'employee') !== 'employee')
 const whoText = computed(() => {
@@ -23,17 +34,19 @@ const activeView = computed(() => {
   if (activeTab.value === 'search') return ChatView
   if (activeTab.value === 'docs') return DocsView
   if (activeTab.value === 'review') return ReviewView
+  if (activeTab.value === 'graph') return GraphView
   return FilesView
 })
 
 function readTab(): Tab {
   const value = new URLSearchParams(location.search).get('view')
-  if (value === 'docs' || value === 'review' || value === 'files' || value === 'search') return value
+  if (value === 'docs' || value === 'review' || value === 'files' || value === 'search' || value === 'graph') return value
   return 'search'
 }
 
 function setTab(tab: Tab) {
   if (tab === 'review' && !isManager.value) return
+  if (tab === 'graph' && !isManager.value) return
   activeTab.value = tab
   const url = new URL(location.href)
   url.searchParams.set('view', tab)
@@ -63,13 +76,14 @@ onMounted(() => {
   window.addEventListener('kb:unauthorized', logout)
   checkHealth()
   if (user.value && !isManager.value && activeTab.value === 'review') activeTab.value = 'search'
+  if (user.value && !isManager.value && activeTab.value === 'graph') activeTab.value = 'search'
   const interval = window.setInterval(checkHealth, 30000)
   window.addEventListener('beforeunload', () => window.clearInterval(interval), { once: true })
 })
 </script>
 
 <template>
-  <LoginPanel v-if="!user" @success="onLogin" />
+  <LoginPanel v-if="!user && !redirectingToLogin" @success="onLogin" />
 
   <template v-else>
     <header class="nav scrolled">
@@ -91,6 +105,7 @@ onMounted(() => {
         <button class="tab" :class="{ on: activeTab === 'search' }" @click="setTab('search')">智能问答</button>
         <button class="tab" :class="{ on: activeTab === 'docs' }" @click="setTab('docs')">知识文档</button>
         <button v-if="isManager" class="tab" :class="{ on: activeTab === 'review' }" @click="setTab('review')">审核</button>
+        <button v-if="isManager" class="tab" :class="{ on: activeTab === 'graph' }" @click="setTab('graph')">知识图谱</button>
         <button class="tab" :class="{ on: activeTab === 'files' }" @click="setTab('files')">文件管理</button>
       </div>
 

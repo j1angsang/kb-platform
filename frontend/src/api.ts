@@ -240,3 +240,94 @@ export function chatAsk(message: string, history: ChatMessage[], sessionId: numb
     body: JSON.stringify({ message, history, session_id: sessionId }),
   })
 }
+
+export interface GraphEntity {
+  id: number
+  name: string
+  type: string
+  aliases: string[]
+  mention_count: number
+}
+
+export interface GraphEdge {
+  direction: 'in' | 'out'
+  predicate: string
+  other_id?: number | null
+  other_name?: string | null
+  other_type?: string | null
+  value?: string | null
+  chunk_id: string
+  confidence: number
+  evidence?: string | null
+  evidence_filename?: string | null
+}
+
+export interface GraphNeighbors {
+  entity: GraphEntity | null
+  edges: GraphEdge[]
+  hidden_edges: number
+}
+
+export interface GraphStats {
+  entities: number
+  merged_entities: number
+  relations: number
+  value_relations: number
+  by_type: { type: string; count: number }[]
+  kg_enabled: boolean
+  docs_by_status: Record<string, number>
+}
+
+export function getGraphStats(): Promise<GraphStats> {
+  return api('/graph/stats')
+}
+
+export function getGraphEntities(params: {
+  q?: string
+  type?: string
+  limit?: number
+  offset?: number
+}): Promise<{ items: GraphEntity[]; total: number }> {
+  const query = new URLSearchParams()
+  Object.entries(params).forEach(([key, value]) => {
+    if (value !== undefined && value !== '') query.set(key, String(value))
+  })
+  return api(`/graph/entities?${query.toString()}`)
+}
+
+export function getEntityNeighbors(id: number, limit = 40): Promise<GraphNeighbors> {
+  return api(`/graph/entities/${id}/neighbors?limit=${limit}`)
+}
+
+export function mergeGraphEntities(sourceId: number, targetId: number): Promise<{ moved_edges: number }> {
+  return api('/graph/entities/merge', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source_id: sourceId, target_id: targetId }),
+  })
+}
+
+export function splitGraphEntity(id: number, alias: string): Promise<{ new_entity_id: number }> {
+  return api(`/graph/entities/${id}/split`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alias }),
+  })
+}
+
+export function graphGc(): Promise<{ orphans_deleted: number }> {
+  return api('/graph/gc', { method: 'POST' })
+}
+
+export function rebuildDocGraph(docId: number): Promise<Record<string, unknown>> {
+  return api(`/graph/docs/${docId}/rebuild`, { method: 'POST' })
+}
+
+export function graphLinkPreview(q: string): Promise<{
+  query: string
+  max_hops: number
+  entities: { id: number; name: string; type: string; score: number; via: string }[]
+  chunks: { chunk_id: string; hop: number; confidence: number; department?: string; preview: string }[]
+}> {
+  return api(`/graph/link?q=${encodeURIComponent(q)}`)
+}

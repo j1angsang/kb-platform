@@ -13,6 +13,7 @@ from models.knowledge_chunk import KnowledgeChunk
 from rag.bm25 import BM25Index
 from rag.embeddings import embed_image, embed_query, embed_texts
 from rag.fusion import normalize_scores, rrf_fuse
+from rag.graph.config import KG_CANDIDATE_TOP_K, KG_ENABLED
 from rag.rerank import RERANK_ENABLED, RERANK_MIN_SCORE, RERANK_TOP_N, rerank
 from services.storage import STORAGE_DIR
 
@@ -26,6 +27,20 @@ def _env_float(name: str, default: float) -> float:
 
 SEARCH_MIN_SCORE = _env_float("SEARCH_MIN_SCORE", 0.80)
 SEARCH_MAX_DROP = _env_float("SEARCH_MAX_DROP", 0.015)
+
+# 弱相关兜底（只在 rerank 开启时生效，因为它依赖绝对分）。
+# 场景：用户问「我的年假还有多久」，库里只有「满1年5天」的制度 —— cross-encoder 判它
+# 回答不了"我还剩几天"，给 0.71，过不了 RERANK_MIN_SCORE=0.9，于是模型看到空资料，
+# 张口就说"知识库里没有年假政策"。这是幻觉：资料在，只是回答不了那个具体问法。
+# 所以加一条：绝对分够高 **且** 明显领先第二名，就注入一条并打上弱证据标记，
+# 让模型"讲制度 + 指出个人数据要另查"，而不是断言没有。
+# 标定数据（实测，同一套语料）：
+#   无答案 股票期权    top1=0.233 margin=0.052  → 不注入
+#   无答案 竞争对手工资 top1=0.330 margin=0.094  → 不注入
+#   部分相关 年假还有多久 top1=0.708 margin=0.354 → 注入
+#   部分相关 年假能攒到明年吗 top1=0.884 margin=0.522 → 注入
+SEARCH_WEAK_MIN = _env_float("SEARCH_WEAK_MIN", 0.55)
+SEARCH_WEAK_MARGIN = _env_float("SEARCH_WEAK_MARGIN", 0.20)
 VECTOR_WEIGHT = _env_float("SEARCH_VECTOR_WEIGHT", 0.6)
 BM25_WEIGHT = _env_float("SEARCH_BM25_WEIGHT", 0.4)
 # 图片命中阈值 0.58 由图片标注集标定，用归一化 score
@@ -64,11 +79,23 @@ def select_relevant_hits(hits: list[dict], top_k: int = 3) -> list[dict]:
     if reranked:
         reranked = sorted(reranked, key=lambda h: h["rerank_score"], reverse=True)
         selected = [h for h in reranked if h["rerank_score"] >= RERANK_MIN_SCORE][:top_k]
+        weak_used = False
+        if not selected:
+            # 强相关一条都没有时，判断"是不是最接近但不达标"，而不是直接放弃
+            top = reranked[0]
+            runner_up = reranked[1]["rerank_score"] if len(reranked) > 1 else 0.0
+            margin = top["rerank_score"] - runner_up
+            if top["rerank_score"] >= SEARCH_WEAK_MIN and margin >= SEARCH_WEAK_MARGIN:
+                weak = dict(top)
+                weak["_weak_evidence"] = True
+                weak["_weak_margin"] = round(margin, 4)
+                selected = [weak]
+                weak_used = True
         logger.info(
             "rag.select mode=rerank hits=%d reranked=%d selected=%d top_rerank=%.4f "
-            "min_rerank=%.2f selected_scores=%s duration_ms=%.1f",
+            "min_rerank=%.2f weak=%s selected_scores=%s duration_ms=%.1f",
             len(hits), len(reranked), len(selected),
-            reranked[0]["rerank_score"], RERANK_MIN_SCORE,
+            reranked[0]["rerank_score"], RERANK_MIN_SCORE, weak_used,
             [round(h["rerank_score"], 4) for h in selected],
             (time.perf_counter() - started) * 1000,
         )
@@ -338,12 +365,55 @@ class PgVectorStore:
             ),
         )
 
+    async def _graph_channel(self, query: str, department: str | None) -> tuple[list[dict], list[dict]]:
+        """图通道：实体链接 → 多跳扩展 → 候选 chunk。返回 (hits, linked_entities)。
+
+        定位是**候选池扩充器**，不是第三路召回。原因：
+        - 图候选没有向量分，进不了 _relevance_score 的 RRF 门控（地板 0.80 会全杀）
+        - 多跳邻居与 query 的语义距离天然远，回填向量分也过不了门控
+        所以图只负责"把原本进不了候选池的 chunk 送进来"，相关性判定交给 cross-encoder
+        的绝对分（rerank_score），门控逻辑一行不用改。
+
+        fail-open：图挂了必须让向量 + BM25 两路照常工作，绝不能把异常抛给检索。
+        """
+        from rag.graph.link import link_query
+        from rag.graph.store import neighbor_chunks
+
+        started = time.perf_counter()
+        try:
+            async with AsyncSessionLocal() as db:
+                entities = await link_query(db, query)
+                if not entities:
+                    return [], []
+                hits = await neighbor_chunks(
+                    db,
+                    [e["id"] for e in entities],
+                    department=department,
+                    limit=KG_CANDIDATE_TOP_K * 2,
+                )
+        except Exception:
+            logger.exception("rag.graph_channel_failed query=%s 本轮跳过图通道", query[:40])
+            return [], []
+        logger.info(
+            "rag.graph_channel query=%s entities=%s hits=%d elapsed_ms=%.1f",
+            query[:40], [(e["name"], e["via"]) for e in entities[:3]], len(hits),
+            (time.perf_counter() - started) * 1000,
+        )
+        return hits, entities
+
     async def search(
         self,
         query: str,
         department: str | None = None,
         top_k: int = 5,
-    ) -> list[dict]:
+        return_meta: bool = False,
+    ) -> list[dict] | tuple[list[dict], dict]:
+        """检索入口。
+
+        return_meta=True 时返回 (hits, meta)，meta 给评测用：
+        要算「图独占命中率」必须知道图通道召回了哪些 chunk、其中哪些是向量/BM25 都没召到的。
+        业务路径一律用默认 False，不承担这个开销。
+        """
         started = time.perf_counter()
         async with AsyncSessionLocal() as db:
             # 部门隔离是高选择性过滤，HNSW 默认 ef_search 会凑不满 top_k，调高换召回
@@ -355,6 +425,13 @@ class PgVectorStore:
                     "bm25_hits=0 returned=0 duration_ms=%.1f reason=collection_empty",
                     query, department or "-all-", (time.perf_counter() - started) * 1000,
                 )
+                if return_meta:
+                    return [], {
+                        "query": query, "department": department,
+                        "graph_enabled": bool(KG_ENABLED), "linked_entities": [],
+                        "graph_hits": [], "vector_ids": [], "bm25_ids": [],
+                        "candidate_count": 0, "pool_size": 0,
+                    }
                 return []
 
             use_bm25 = BM25_WEIGHT > 0
@@ -493,9 +570,31 @@ class PgVectorStore:
                     c["fusion_score"] = c["score"]
                 candidates.sort(key=lambda h: h["score"], reverse=True)
 
+            graph_hits: list[dict] = []
+            linked_entities: list[dict] = []
             if RERANK_ENABLED:
                 text_pool = candidates[:RERANK_TOP_N]
-                fused = [*(await rerank(query, text_pool, top_n=RERANK_TOP_N)), *image_hits]
+                if KG_ENABLED:
+                    graph_hits, linked_entities = await self._graph_channel(query, department)
+                    # 去重：已在前两路的候选保留原对象（它有真实的向量/BM25 分），
+                    # 只补一个 _graph_hop 标记，供评测区分「图独占命中」
+                    pool_ids = {h["id"]: h for h in text_pool}
+                    graph_hop_map = {h["id"]: h["_graph_hop"] for h in graph_hits}
+                    for cid, hop in graph_hop_map.items():
+                        if cid in pool_ids:
+                            pool_ids[cid]["_graph_hop"] = hop
+                    extras = []
+                    for hit in graph_hits:
+                        if hit["id"] in pool_ids:
+                            continue
+                        # 显式置零：评测靠 _vector_score == 0 且 _bm25_score == 0 判定图独占
+                        hit["_vector_score"] = 0.0
+                        hit["_bm25_score"] = 0.0
+                        extras.append(hit)
+                    text_pool = [*text_pool, *extras[:KG_CANDIDATE_TOP_K]]
+                # top_n 传池子长度：扩池后必须让每个候选都拿到绝对分，
+                # 否则新进来的图候选 rerank_score=None，会被门控当"未评分"丢掉
+                fused = [*(await rerank(query, text_pool, top_n=len(text_pool))), *image_hits]
             else:
                 fused = [*candidates, *image_hits]
             text_result = [h for h in fused if h["metadata"].get("type") != "image"][:top_k]
@@ -508,16 +607,33 @@ class PgVectorStore:
             top_relevance = max((h.get("_relevance_score", 0) for h in candidates), default=None)
             logger.info(
                 "rag.search query=%s department=%s fusion=%s rrf_k=%d "
-                "vector_hits=%d bm25_hits=%d candidates=%d returned=%d "
+                "vector_hits=%d bm25_hits=%d candidates=%d graph_hits=%d kg=%s returned=%d "
                 "top_vector_score=%s top_bm25_score=%s top_fused_score=%s "
                 "top_fusion_score=%s top_relevance=%s vector_ms=%.1f bm25_ms=%.1f "
                 "duration_ms=%.1f weights=%.2f/%.2f min_score=%.3f max_drop=%.3f",
                 query, department or "-all-", SEARCH_FUSION, RRF_K,
-                len(vector_hits), len(bm25_hits), len(candidate_ids), len(result),
+                len(vector_hits), len(bm25_hits), len(candidate_ids), len(graph_hits),
+                "on" if KG_ENABLED else "off", len(result),
                 top_vector, top_bm25, top_fused, top_fusion, top_relevance,
                 vector_ms, bm25_ms, (time.perf_counter() - started) * 1000,
                 VECTOR_WEIGHT, BM25_WEIGHT, SEARCH_MIN_SCORE, SEARCH_MAX_DROP,
             )
+            if return_meta:
+                return result, {
+                    "query": query,
+                    "department": department,
+                    "graph_enabled": bool(KG_ENABLED),
+                    "linked_entities": linked_entities,
+                    "graph_hits": [
+                        {"id": h["id"], "hop": h.get("_graph_hop"),
+                         "confidence": h.get("_graph_confidence")}
+                        for h in graph_hits
+                    ],
+                    "vector_ids": list(vector_by_id.keys()),
+                    "bm25_ids": [cid for cid, _ in bm25_hits],
+                    "candidate_count": len(candidate_ids),
+                    "pool_size": len(text_pool) if RERANK_ENABLED else len(candidates),
+                }
             return result
 
 

@@ -26,8 +26,10 @@ from services.object_storage import object_storage
 validate_settings()
 
 from routers.chat import router as chat_router
+from routers.graph import router as graph_router
 from routers.knowledge import router as knowledge_router
 from config.db_conf import AsyncSessionLocal, engine
+from crud import graph_job as graph_crud
 from crud import knowledge as knowledge_crud
 from services.storage import STORAGE_DIR
 from routers.auth import router as auth_router
@@ -37,7 +39,8 @@ from routers.files import router as files_router
 from routers.files import upload_cleanup_loop
 from routers.health import router as health_router
 from routers.metrics import router as metrics_router
-from rag.indexer import index_document
+from rag.graph.config import KG_ENABLED, KG_JOB_POLL_SECONDS
+from rag.indexer import extract_doc_graph, index_document
 from rag.store import store
 
 logger = logging.getLogger(__name__)
@@ -59,13 +62,20 @@ app.include_router(analytics_router)
 app.include_router(files_router)
 app.include_router(knowledge_router)
 app.include_router(chat_router)
+app.include_router(graph_router)
 app.include_router(health_router)
 app.include_router(metrics_router)
 
 
 @app.get("/app", include_in_schema=False)
 async def vue_workbench():
-    return FileResponse("static/app/index.html")
+    # 入口页必须 no-cache：它引用带 hash 的 JS 产物，一旦被浏览器缓存住，
+    # 后续重新构建前端用户也拿不到新代码（表现为"改了没反应"，只能手动强刷）。
+    # JS/CSS 本身带 hash，可以长期缓存，所以只需管住这一个入口。
+    return FileResponse(
+        "static/app/index.html",
+        headers={"Cache-Control": "no-cache, must-revalidate"},
+    )
 
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
@@ -142,6 +152,34 @@ async def index_job_loop() -> None:
         await asyncio.sleep(interval)
 
 
+async def graph_job_loop() -> None:
+    """图抽取轮询。KG 关闭时直接退出，不占一个空转协程。
+
+    串行处理：图抽取是分钟级 LLM 调用，并发拉满只会撞上游限流。
+    单实例部署下串行不会更慢，还能让日志里的 doc 顺序可读。
+    """
+    if not KG_ENABLED:
+        logger.info("graph_job_loop disabled reason=KG_ENABLED_false")
+        return
+    interval = max(5, KG_JOB_POLL_SECONDS)
+    while True:
+        try:
+            async with AsyncSessionLocal() as db:
+                await graph_crud.requeue_stuck_graph_jobs(db)
+                await db.commit()
+                due_doc_ids = await graph_crud.list_due_graph_job_doc_ids(db)
+            for doc_id in due_doc_ids:
+                try:
+                    await extract_doc_graph(doc_id)
+                except Exception:
+                    logger.exception("graph_job_loop doc=%s 执行失败", doc_id)
+        except Exception:
+            from services.metrics import bg_loop_error_total
+            bg_loop_error_total.labels(loop="graph_jobs").inc()
+            logger.exception("graph_job_loop_failed")
+        await asyncio.sleep(interval)
+
+
 @app.on_event("startup")
 async def on_startup():
     STORAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -184,12 +222,15 @@ async def on_startup():
     # 后台清理孤儿分片，默认每 3600s 跑一次
     app.state.upload_cleanup_task = asyncio.create_task(upload_cleanup_loop())
     app.state.index_job_task = asyncio.create_task(index_job_loop())
-    logger.info("Knowledge Base Platform 启动完成，端口 8005")
+    app.state.graph_job_task = asyncio.create_task(graph_job_loop())
+    logger.info(
+        "Knowledge Base Platform 启动完成，端口 8005 kg_enabled=%s", KG_ENABLED
+    )
 
 
 @app.on_event("shutdown")
 async def on_shutdown():
-    for attr in ("upload_cleanup_task", "index_job_task"):
+    for attr in ("upload_cleanup_task", "index_job_task", "graph_job_task"):
         task = getattr(app.state, attr, None)
         if task is not None:
             task.cancel()

@@ -850,7 +850,9 @@ async function doAuth() {
       localStorage.setItem(TOKEN_KEY, data.access_token);
       localStorage.setItem(USER_KEY, JSON.stringify({ username: data.username, department: data.department, role: data.role, position: data.position }));
       log('登录成功：' + data.username);
-      location.href = '/app/';
+      // 从 /app 被踢回首页登录时带 next，登录后跳回原地址；否则默认进工作台
+      const next = new URLSearchParams(location.search).get('next');
+      location.href = next && next.startsWith('/') ? next : '/app/';
     } else {
       log('注册成功，请登录');
       authMode = 'login';

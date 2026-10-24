@@ -48,6 +48,7 @@ from services.memory import CHECKPOINT_MESSAGE_WINDOW, get_checkpointer, thread_
 from services.object_storage import object_storage
 from services.prompt_guard import (
     INJECTION_INSTRUCTION,
+    WEAK_EVIDENCE_HINT,
     scan_injection,
     wrap_knowledge,
     wrap_untrusted,
@@ -446,6 +447,7 @@ async def rag_hook(state: dict, runtime) -> dict | None:
 
     new_messages = []
     source_ids = []  # 引用编号 [1] [2]……顺序 = sources 列表顺序，前后端契约
+    file_index: dict[int, int] = {}  # file_id → 引用序号，文本块与图片块共用
     if text_hits:
         hits = select_relevant_hits(text_hits, top_k=3)
         logger.info(
@@ -454,7 +456,12 @@ async def rag_hook(state: dict, runtime) -> dict | None:
         )
         if hits:
             parts = []
-            for i, h in enumerate(hits, 1):
+            weak_hits = [h for h in hits if h.get("_weak_evidence")]
+            # 同一份文件的多个 chunk 必须共享同一编号：
+            # 正文 [N] 与 sources[N-1] 是前后端契约，而 source_ids 在 run_agent 里会去重。
+            # 如果按 chunk 序号编号，3 个 chunk 来自同一文件时正文会出现 [1][2][3]、
+            # sources 却只有 1 项，用户点 [2][3] 什么都打不开。
+            for pos, h in enumerate(hits, 1):
                 fid = h["metadata"].get("file_id")
                 flags = scan_injection(h["text"])
                 if flags:
@@ -465,16 +472,25 @@ async def rag_hook(state: dict, runtime) -> dict | None:
                         "rag.injection_suspected channel=retrieved chunk_id=%s file_id=%s rules=%s",
                         h.get("id"), fid, flags,
                     )
+                cite = pos
+                if fid:
+                    fid_int = int(fid)
+                    if fid_int not in file_index:
+                        source_ids.append(fid_int)
+                        file_index[fid_int] = len(source_ids)
+                    cite = file_index[fid_int]
                 parts.append(wrap_untrusted(
                     h["text"],
-                    index=i,
+                    index=cite,
                     source=f"file_id={fid}" if fid else "knowledge",
                 ))
-                if fid:
-                    source_ids.append(fid)
             knowledge = wrap_knowledge(parts)
+            # 弱证据必须在块之前说明性质：否则模型会把"答不全"当成"没有"。
+            # 实测原句是"你好我的年假还有多久"，资料是《请假与休假管理规定》的年假条款，
+            # rerank 0.708 没过 0.9 被丢，模型于是宣称"知识库里没有年假政策"。
+            hint = f"{WEAK_EVIDENCE_HINT}\n" if weak_hits else ""
             new_messages.append(SystemMessage(
-                content=f"[知识库参考]\n{INJECTION_INSTRUCTION}\n{knowledge}"
+                content=f"[知识库参考]\n{INJECTION_INSTRUCTION}\n{hint}{knowledge}"
             ))
         else:
             rerank_broken = any(h.get("rerank_fallback") for h in text_hits)
@@ -487,8 +503,12 @@ async def rag_hook(state: dict, runtime) -> dict | None:
                 refusal = ("[知识库参考] 知识库检索暂时不可用，请如实告知用户无法从知识库确认，"
                            "不要编造答案。")
             else:
-                refusal = ("[知识库参考] 知识库中没有与用户问题相关的内容。"
-                           "请如实告知用户你无法从知识库确认，不要编造答案。")
+                # 措辞必须留有余地：写"没有相关内容"时，模型会加工成"知识库里没有 X 政策"，
+                # 而它其实并不知道库里有没有那个制度，只知道这次没检索到。
+                refusal = ("[知识库参考] 本次检索没有找到与该问题直接相关的材料。"
+                           "请如实告知用户你无法从知识库确认。"
+                           "如果用户问的是某个具体制度或政策，只能说「这次没检索到相关材料」，"
+                           "不要断言该制度不存在，也不要把具体制度名说成「知识库里没有」。")
             new_messages.append(SystemMessage(content=refusal))
 
     for img_hit in image_hits:
@@ -527,8 +547,10 @@ async def rag_hook(state: dict, runtime) -> dict | None:
             {"type": "image_url", "image_url": {"url": data_url}},
         ]))
         fid = meta.get("file_id")
-        if fid:
+        if fid and int(fid) not in file_index:
+            # 图片块也占一个引用编号：同一文件已由文本块占用时不重复追加
             source_ids.append(int(fid))
+            file_index[int(fid)] = len(source_ids)
 
     if not new_messages and not source_ids:
         return None
@@ -834,6 +856,41 @@ async def stream_agent_events(user_message: str, history: list[dict] | None = No
         }
 
 
+def _collect_tool_trace(messages) -> list[dict]:
+    """按出现顺序导出本轮的工具调用，供评测做「过程管控」和「工具真实性」判定。
+
+    刻意从 messages 里提取而不是解析日志：日志会采样、会轮转、格式还会随人改，
+    拿来做指标不稳定。这里只读 ToolMessage 的 name/status/content，不改执行逻辑。
+    """
+    pending: dict[str, dict] = {}
+    trace: list[dict] = []
+    for m in messages:
+        for call in getattr(m, "tool_calls", None) or []:
+            pending[str(call.get("id") or "")] = {
+                "name": call.get("name"),
+                "args": call.get("args") or {},
+            }
+        if isinstance(m, ToolMessage):
+            call = pending.get(str(getattr(m, "tool_call_id", "") or ""), {})
+            content = str(m.content or "")
+            status = getattr(m, "status", "success")
+            trace.append({
+                "name": call.get("name") or getattr(m, "name", "") or "",
+                "args_keys": sorted((call.get("args") or {}).keys()),
+                "status": status,
+                # 不能只看 ToolMessage.status：工具内部捕获异常后仍正常返回字符串，
+                # status 是 success，content 却是"工具执行失败：..."。
+                # 评测要是信了 status，就会把"工具超时 + 模型编数字"判成一切正常。
+                "ok": _tool_ok(content) and status != "error",
+                "content_chars": len(content),
+                "content_preview": content[:160],
+                # 评测做忠实度判定时，工具输出本身就是证据（Text2SQL 的答案不来自文档），
+                # 只拿 RAG 检索结果当证据会把正确的数据库回答判成"无据"
+                "content": content[:1500],
+            })
+    return trace
+
+
 async def run_agent(user_message: str, history: list[dict] | None = None,
                     user_department: str = "未分配",
                     allow_all_departments: bool = False,
@@ -959,4 +1016,5 @@ async def run_agent(user_message: str, history: list[dict] | None = None,
         "sources": file_sources,
         "data_sources": data_sources,
         "usage": usage_text,
+        "tool_trace": _collect_tool_trace(result["messages"]),
     }

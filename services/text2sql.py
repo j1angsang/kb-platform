@@ -88,7 +88,9 @@ def _get_llm():
         api_key=LLM_API_KEY,
         base_url=LLM_BASE_URL,
         temperature=0,
-        timeout=15,
+        # 15s 对生成 SQL 太紧：实测上游偶发 15.4s 才返回，直接判超时，
+        # 紧接着模型在无数据情况下编了个数字。宁可多等，也不要空手回来。
+        timeout=30,
         max_retries=0,
         max_tokens=300,
     )

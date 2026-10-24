@@ -18,3 +18,6 @@ eval/results/latest.json
 
 frontend/node_modules/
 frontend/.vite/
+
+# 本地 agent 工作记录，不属于项目产物
+.workbuddy/

@@ -178,6 +178,51 @@ curl -s -X POST http://127.0.0.1:8005/files/upload \
 - **改写结果只用于检索**：不当答案、不进注入内容、不写进 sources。
 - **fail-open**：超时/异常/输出异常一律回退原 query，检索不因改写失败而中断。
 
+### 知识图谱：`KG_ENABLED`
+
+从已入库文本块抽取「实体—谓词—实体」三元组，按实体做多跳扩展，把原本进不了候选池的
+chunk 补进重排池。
+
+**定位是候选池扩充器，不是第三路召回。** 理由：图候选没有向量分，进不了
+`_relevance_score` 的 RRF 门控（地板 `SEARCH_MIN_SCORE=0.80` 会全杀），而多跳邻居与 query
+的语义距离天然远，回填向量分也过不了门控。所以图只负责"把候选送进来"，相关性判定交给
+cross-encoder 的绝对分。
+
+- **硬依赖**：`KG_ENABLED=true` 要求 `RERANK_ENABLED=true`，`config/settings.py` 启动即校验。
+- **不产生越权出口**：实体只存名字/类型/别名，不含正文、不含部门、不含属性值。图扩展产出的
+  只有 `chunk_id`，必须回 `knowledge_chunks` 走**原来那条** `_permission_clause`。
+- **与入库解耦**：`kg_status` 是独立状态机，`index_status=ready` 先落库、先可检索，图抽取异步
+  跟在后面。图失败只影响图通道，绝不把文档标记为入库失败。
+- **跳过两类块**：xlsx 表格行块（该走 Text2SQL）与 `source=ocr_lowconf`（文字本身不可靠）。
+- **泛实体停用词**：`KG_LINK_STOPWORDS` 里的词（员工/公司/部门…）不参与链接 —— 实测
+  「员工生病要请长假」曾因命中「员工」被扩到《报销管理制度》。
+
+```dotenv
+KG_ENABLED=true
+KG_MAX_HOPS=2                  # 1~3，递归 CTE 靠它防环
+KG_LINK_MIN_SCORE=0.82         # 实测标定：0.86 会把「生病→病假」全挡住
+KG_CANDIDATE_TOP_K=12
+```
+
+回填与管理：
+
+```bash
+.venv\Scripts\python.exe scripts\build_graph.py --dry-run    # 看计划
+.venv\Scripts\python.exe scripts\build_graph.py --limit 5    # 先验 5 份质量
+.venv\Scripts\python.exe scripts\build_graph.py              # 全量（断点续跑）
+.venv\Scripts\python.exe scripts\build_graph.py --gc         # 清孤儿实体
+.venv\Scripts\python.exe scripts\build_graph.py --stats
+```
+
+管理端在 `/graph/*`（仅管理者）：实体浏览、邻域证据、人工合并/拆分、链接预览。
+界面入口是工作台「知识图谱」页。
+
+评测（三路消融 + 图独占命中率）：
+
+```bash
+.venv\Scripts\python.exe eval\run_graph.py --graph both
+```
+
 ## 深入阅读
 
 - [检索融合改造报告：Weighted → RRF](docs/RRF_CHANGE_REPORT.md)
@@ -189,6 +234,9 @@ curl -s -X POST http://127.0.0.1:8005/files/upload \
 - [受限 Text2SQL 代码讲解](docs/TEXT2SQL_CODE_WALKTHROUGH.md)
 - [Vue 前端改造报告](docs/FRONTEND_REPORT.md)
 - [Vue 前端代码讲解](docs/FRONTEND_CODE_WALKTHROUGH.md)
+- [知识图谱接入：评估](docs/GRAPH_RAG_ASSESSMENT.md)
+- [知识图谱接入：实现报告](docs/GRAPH_IMPLEMENTATION.md)
+- [Agent 七维评测](docs/AGENT_EVAL.md)
 - [Agent 架构](agents/ARCHITECTURE.md)
 
 ## 评测
@@ -292,6 +340,7 @@ pnpm build
 | scripts/ | 运维脚本：对象存储回填、Text2SQL 只读角色创建 |
 | docker-compose.yml / Dockerfile | PostgreSQL + Redis + MinIO + App 一键启动 |
 | rag/ | parser / embeddings / fusion / store / indexer / bm25 |
+| rag/graph/ | 知识图谱：extract 受限抽取 / resolve 三层消歧 / link 实体链接 / store 多跳查询 / pipeline 单文档编排 |
 | docs/ | 检索融合、切分与注入防护、对象存储、Text2SQL 的改造报告和代码讲解 |
 | eval/ | 检索评测题集、Text2SQL 评测题集、指标与可复跑脚本 |
 | agents/ | create_agent + 钩子，企业问答编排，见 [agents/ARCHITECTURE.md](agents/ARCHITECTURE.md) |

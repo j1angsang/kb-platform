@@ -1,0 +1,1301 @@
+{
+  "meta": {
+    "count": 15,
+    "dataset": "eval\\graph_set.jsonl",
+    "top_k": 5
+  },
+  "configs": {
+    "graph_off": {
+      "graph": false,
+      "advantage": {
+        "count": 8,
+        "recall@5": 1.0,
+        "selected_recall": 0.5,
+        "keyword_rate": 0.375,
+        "mrr": 0.775,
+        "ndcg@5": 0.8735,
+        "avg_noise": 0.2917,
+        "graph_linked_rate": 0.0,
+        "graph_hits_total": 0,
+        "graph_only_total": 0,
+        "graph_only_selected_total": 0,
+        "graph_only_rate": 0.0,
+        "p50_ms": 205.97,
+        "p95_ms": 1387.26
+      },
+      "control": {
+        "count": 4,
+        "recall@5": 1.0,
+        "selected_recall": 1.0,
+        "keyword_rate": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "avg_noise": 0.0,
+        "graph_linked_rate": 0.0,
+        "graph_hits_total": 0,
+        "graph_only_total": 0,
+        "graph_only_selected_total": 0,
+        "graph_only_rate": 0.0,
+        "p50_ms": 183.71,
+        "p95_ms": 208.48
+      },
+      "refusal": {
+        "count": 3,
+        "refusal_rate": 1.0,
+        "false_positive": 0
+      },
+      "by_category": {
+        "aggregation": {
+          "count": 3,
+          "recall@5": 1.0,
+          "selected_recall": 0.3333,
+          "keyword_rate": 0.3333,
+          "mrr": 0.4,
+          "ndcg@5": 0.5082,
+          "avg_noise": 0.5,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 228.49,
+          "p95_ms": 1387.26
+        },
+        "control": {
+          "count": 4,
+          "recall@5": 1.0,
+          "selected_recall": 1.0,
+          "keyword_rate": 1.0,
+          "mrr": 1.0,
+          "ndcg@5": 1.0,
+          "avg_noise": 0.0,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 183.71,
+          "p95_ms": 208.48
+        },
+        "cross_department": {
+          "count": 1,
+          "recall@5": 0.0,
+          "selected_recall": 0.0,
+          "keyword_rate": 0.0,
+          "mrr": 0.0,
+          "ndcg@5": 0.0,
+          "avg_noise": 0.0,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 207.9,
+          "p95_ms": 207.9
+        },
+        "indirect": {
+          "count": 2,
+          "recall@5": 1.0,
+          "selected_recall": 0.5,
+          "keyword_rate": 0.5,
+          "mrr": 1.0,
+          "ndcg@5": 1.0,
+          "avg_noise": 0.25,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 175.15,
+          "p95_ms": 205.37
+        },
+        "multihop": {
+          "count": 3,
+          "recall@5": 1.0,
+          "selected_recall": 0.6667,
+          "keyword_rate": 0.3333,
+          "mrr": 1.0,
+          "ndcg@5": 1.1545,
+          "avg_noise": 0.1111,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 205.97,
+          "p95_ms": 226.91
+        },
+        "no_answer": {
+          "count": 2,
+          "recall@5": 0.0,
+          "selected_recall": 0.0,
+          "keyword_rate": 0.0,
+          "mrr": 0.0,
+          "ndcg@5": 0.0,
+          "avg_noise": 0.0,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 198.93,
+          "p95_ms": 256.99
+        }
+      },
+      "items": [
+        {
+          "id": "g-01",
+          "category": "aggregation",
+          "hops": 2,
+          "question": "人事部要管哪些事？",
+          "expected_files": [
+            "请假与休假管理规定.md",
+            "员工手册.md",
+            "考勤管理制度.md"
+          ],
+          "raw_files": [
+            "公司组织架构与部门职责.md",
+            "人事部-招聘面试流程.md",
+            "培训与发展制度.md",
+            "社保与公积金办理指南.md",
+            "请假与休假管理规定.md"
+          ],
+          "selected_files": [
+            "公司组织架构与部门职责.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 0.2,
+          "ndcg": 0.18154179253735267,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 1.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 22,
+          "elapsed_ms": 1387.257899999895
+        },
+        {
+          "id": "g-02",
+          "category": "indirect",
+          "hops": 2,
+          "question": "员工生病要请长假，除了病假条还要找谁？",
+          "expected_files": [
+            "请假与休假管理规定.md"
+          ],
+          "raw_files": [
+            "请假与休假管理规定.md",
+            "公司组织架构与部门职责.md",
+            "员工手册.md",
+            "考勤管理制度.md",
+            "新员工入职指南.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 24,
+          "elapsed_ms": 205.37289999992936
+        },
+        {
+          "id": "g-03",
+          "category": "multihop",
+          "hops": 2,
+          "question": "迟到超过半小时按什么处理？",
+          "expected_files": [
+            "考勤管理制度.md",
+            "请假与休假管理规定.md"
+          ],
+          "raw_files": [
+            "考勤管理制度.md",
+            "会议室与办公资源使用规定.md",
+            "员工行为规范与职业道德.md",
+            "员工手册.md",
+            "加班与调休管理规定.md"
+          ],
+          "selected_files": [
+            "考勤管理制度.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 0.6131471927654584,
+          "selected_recall": true,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 24,
+          "elapsed_ms": 205.9676999997464
+        },
+        {
+          "id": "g-04",
+          "category": "aggregation",
+          "hops": 2,
+          "question": "OA 系统上可以提交哪些申请？",
+          "expected_files": [
+            "考勤管理制度.md",
+            "请假与休假管理规定.md",
+            "员工手册.md"
+          ],
+          "raw_files": [
+            "加班与调休管理规定.md",
+            "请假与休假管理规定.md",
+            "员工手册.md",
+            "公车与车辆管理制度.md",
+            "考勤管理制度.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": true,
+          "mrr": 0.5,
+          "ndcg": 0.7122630665145961,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 184.17680000038672
+        },
+        {
+          "id": "g-05",
+          "category": "indirect",
+          "hops": 2,
+          "question": "新来的同事多久能转正？",
+          "expected_files": [
+            "员工手册.md"
+          ],
+          "raw_files": [
+            "员工手册.md",
+            "新员工入职指南.md",
+            "培训与发展制度.md",
+            "福利与补贴制度.md",
+            "人事部-招聘面试流程.md"
+          ],
+          "selected_files": [
+            "员工手册.md",
+            "新员工入职指南.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.5,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 21,
+          "elapsed_ms": 175.1486000002842
+        },
+        {
+          "id": "g-06",
+          "category": "multihop",
+          "hops": 2,
+          "question": "销售折扣需要谁审批？",
+          "expected_files": [
+            "销售部内部管理文档.txt"
+          ],
+          "raw_files": [
+            "销售部内部管理文档.txt",
+            "销售部-报价审批流程.md",
+            "销售部内部管理文档.txt",
+            "销售部内部管理文档.txt",
+            "销售合同审批流程.md"
+          ],
+          "selected_files": [
+            "销售部内部管理文档.txt",
+            "销售部-报价审批流程.md",
+            "销售部内部管理文档.txt"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.9306765580733931,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.3333333333333333,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 28,
+          "elapsed_ms": 226.9098999995549
+        },
+        {
+          "id": "g-07",
+          "category": "aggregation",
+          "hops": 2,
+          "question": "客户分几级，按什么标准分？",
+          "expected_files": [
+            "销售部内部管理文档.txt"
+          ],
+          "raw_files": [
+            "销售部-客户分级管理办法.md",
+            "销售部内部管理文档.txt",
+            "销售部订单表.xlsx",
+            "客户投诉处理流程.md",
+            "销售部订单表.xlsx"
+          ],
+          "selected_files": [
+            "销售部-客户分级管理办法.md",
+            "销售部内部管理文档.txt"
+          ],
+          "hit_at_k": true,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.5,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 30,
+          "elapsed_ms": 228.48659999999654
+        },
+        {
+          "id": "g-08",
+          "category": "control",
+          "hops": 1,
+          "question": "年假有几天？",
+          "expected_files": [
+            "请假与休假管理规定.md"
+          ],
+          "raw_files": [
+            "请假与休假管理规定.md",
+            "员工手册.md",
+            "福利与补贴制度.md",
+            "员工离职交接流程.md",
+            "考勤管理制度.md"
+          ],
+          "selected_files": [
+            "请假与休假管理规定.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 20,
+          "elapsed_ms": 181.82100000012724
+        },
+        {
+          "id": "g-09",
+          "category": "control",
+          "hops": 1,
+          "question": "出差住宿标准是多少？",
+          "expected_files": [
+            "差旅费管理办法.md"
+          ],
+          "raw_files": [
+            "差旅费管理办法.md",
+            "福利与补贴制度.md",
+            "报销管理制度.md",
+            "培训与发展制度.md",
+            "考勤管理制度.md"
+          ],
+          "selected_files": [
+            "差旅费管理办法.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 20,
+          "elapsed_ms": 183.7126000000353
+        },
+        {
+          "id": "g-10",
+          "category": "control",
+          "hops": 1,
+          "question": "报销需要哪些材料？",
+          "expected_files": [
+            "报销管理制度.md"
+          ],
+          "raw_files": [
+            "报销管理制度.md",
+            "差旅费管理办法.md",
+            "公车与车辆管理制度.md",
+            "采购申请与付款流程.md",
+            "培训与发展制度.md"
+          ],
+          "selected_files": [
+            "报销管理制度.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 21,
+          "elapsed_ms": 177.29729999973642
+        },
+        {
+          "id": "g-11",
+          "category": "control",
+          "hops": 1,
+          "question": "数据库变更要走什么审批？",
+          "expected_files": [
+            "技术部-数据库变更审批.md"
+          ],
+          "raw_files": [
+            "技术部-数据库变更审批.md",
+            "技术部-发布上线流程.md",
+            "技术部-代码仓库与分支规范.md",
+            "项目立项与验收流程.md",
+            "保密与数据分级规范.md"
+          ],
+          "selected_files": [
+            "技术部-数据库变更审批.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 208.48169999953825
+        },
+        {
+          "id": "g-12",
+          "category": "cross_department",
+          "hops": 1,
+          "question": "技术部的数据库变更怎么审批？",
+          "expected_files": [],
+          "raw_files": [
+            "项目立项与验收流程.md",
+            "IT服务台支持流程.md",
+            "公司组织架构与部门职责.md",
+            "保密与数据分级规范.md",
+            "固定资产管理办法.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": false,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": true,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 20,
+          "elapsed_ms": 207.90450000004057
+        },
+        {
+          "id": "g-13",
+          "category": "no_answer",
+          "hops": 1,
+          "question": "公司股票期权怎么分配？",
+          "expected_files": [],
+          "raw_files": [
+            "公司组织架构与部门职责.md",
+            "福利与补贴制度.md",
+            "员工手册.md",
+            "人事部-绩效评估制度.md",
+            "新员工入职指南.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": false,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": true,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 256.99189999977534
+        },
+        {
+          "id": "g-14",
+          "category": "no_answer",
+          "hops": 1,
+          "question": "竞争对手给员工开多少工资？",
+          "expected_files": [],
+          "raw_files": [
+            "福利与补贴制度.md",
+            "工资发放与个税说明.md",
+            "公司组织架构与部门职责.md",
+            "员工手册.md",
+            "人事部-招聘面试流程.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": false,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": true,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 21,
+          "elapsed_ms": 198.92880000043078
+        },
+        {
+          "id": "g-15",
+          "category": "multihop",
+          "hops": 2,
+          "question": "请年假需要经过哪几个人审批？",
+          "expected_files": [
+            "请假与休假管理规定.md",
+            "员工手册.md"
+          ],
+          "raw_files": [
+            "请假与休假管理规定.md",
+            "考勤管理制度.md",
+            "员工手册.md",
+            "公司组织架构与部门职责.md",
+            "报销管理制度.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 0.9197207891481876,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 24,
+          "elapsed_ms": 173.1669000000693
+        }
+      ]
+    },
+    "graph_on": {
+      "graph": true,
+      "advantage": {
+        "count": 8,
+        "recall@5": 1.0,
+        "selected_recall": 0.5,
+        "keyword_rate": 0.375,
+        "mrr": 0.775,
+        "ndcg@5": 0.8735,
+        "avg_noise": 0.2917,
+        "graph_linked_rate": 0.875,
+        "graph_hits_total": 40,
+        "graph_only_total": 0,
+        "graph_only_selected_total": 0,
+        "graph_only_rate": 0.0,
+        "p50_ms": 230.58,
+        "p95_ms": 296.35
+      },
+      "control": {
+        "count": 4,
+        "recall@5": 1.0,
+        "selected_recall": 1.0,
+        "keyword_rate": 1.0,
+        "mrr": 1.0,
+        "ndcg@5": 1.0,
+        "avg_noise": 0.0,
+        "graph_linked_rate": 0.75,
+        "graph_hits_total": 14,
+        "graph_only_total": 0,
+        "graph_only_selected_total": 0,
+        "graph_only_rate": 0.0,
+        "p50_ms": 196.82,
+        "p95_ms": 231.15
+      },
+      "refusal": {
+        "count": 3,
+        "refusal_rate": 1.0,
+        "false_positive": 0
+      },
+      "by_category": {
+        "aggregation": {
+          "count": 3,
+          "recall@5": 1.0,
+          "selected_recall": 0.3333,
+          "keyword_rate": 0.3333,
+          "mrr": 0.4,
+          "ndcg@5": 0.5082,
+          "avg_noise": 0.5,
+          "graph_linked_rate": 1.0,
+          "graph_hits_total": 27,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 224.91,
+          "p95_ms": 237.94
+        },
+        "control": {
+          "count": 4,
+          "recall@5": 1.0,
+          "selected_recall": 1.0,
+          "keyword_rate": 1.0,
+          "mrr": 1.0,
+          "ndcg@5": 1.0,
+          "avg_noise": 0.0,
+          "graph_linked_rate": 0.75,
+          "graph_hits_total": 14,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 196.82,
+          "p95_ms": 231.15
+        },
+        "cross_department": {
+          "count": 1,
+          "recall@5": 0.0,
+          "selected_recall": 0.0,
+          "keyword_rate": 0.0,
+          "mrr": 0.0,
+          "ndcg@5": 0.0,
+          "avg_noise": 0.0,
+          "graph_linked_rate": 1.0,
+          "graph_hits_total": 5,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 175.79,
+          "p95_ms": 175.79
+        },
+        "indirect": {
+          "count": 2,
+          "recall@5": 1.0,
+          "selected_recall": 0.5,
+          "keyword_rate": 0.5,
+          "mrr": 1.0,
+          "ndcg@5": 1.0,
+          "avg_noise": 0.25,
+          "graph_linked_rate": 1.0,
+          "graph_hits_total": 10,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 210.3,
+          "p95_ms": 231.9
+        },
+        "multihop": {
+          "count": 3,
+          "recall@5": 1.0,
+          "selected_recall": 0.6667,
+          "keyword_rate": 0.3333,
+          "mrr": 1.0,
+          "ndcg@5": 1.1545,
+          "avg_noise": 0.1111,
+          "graph_linked_rate": 0.6667,
+          "graph_hits_total": 3,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 230.58,
+          "p95_ms": 296.35
+        },
+        "no_answer": {
+          "count": 2,
+          "recall@5": 0.0,
+          "selected_recall": 0.0,
+          "keyword_rate": 0.0,
+          "mrr": 0.0,
+          "ndcg@5": 0.0,
+          "avg_noise": 0.0,
+          "graph_linked_rate": 0.0,
+          "graph_hits_total": 0,
+          "graph_only_total": 0,
+          "graph_only_selected_total": 0,
+          "graph_only_rate": 0.0,
+          "p50_ms": 188.22,
+          "p95_ms": 198.12
+        }
+      },
+      "items": [
+        {
+          "id": "g-01",
+          "category": "aggregation",
+          "hops": 2,
+          "question": "人事部要管哪些事？",
+          "expected_files": [
+            "请假与休假管理规定.md",
+            "员工手册.md",
+            "考勤管理制度.md"
+          ],
+          "raw_files": [
+            "公司组织架构与部门职责.md",
+            "人事部-招聘面试流程.md",
+            "培训与发展制度.md",
+            "社保与公积金办理指南.md",
+            "请假与休假管理规定.md"
+          ],
+          "selected_files": [
+            "公司组织架构与部门职责.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 0.2,
+          "ndcg": 0.18154179253735267,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 1.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "人事部"
+          ],
+          "graph_hits": 13,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 224.90629999992962
+        },
+        {
+          "id": "g-02",
+          "category": "indirect",
+          "hops": 2,
+          "question": "员工生病要请长假，除了病假条还要找谁？",
+          "expected_files": [
+            "请假与休假管理规定.md"
+          ],
+          "raw_files": [
+            "请假与休假管理规定.md",
+            "公司组织架构与部门职责.md",
+            "员工手册.md",
+            "考勤管理制度.md",
+            "新员工入职指南.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": false,
+          "linked_entities": [
+            "病假",
+            "病假条",
+            "请假"
+          ],
+          "graph_hits": 9,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 24,
+          "elapsed_ms": 210.29970000017784
+        },
+        {
+          "id": "g-03",
+          "category": "multihop",
+          "hops": 2,
+          "question": "迟到超过半小时按什么处理？",
+          "expected_files": [
+            "考勤管理制度.md",
+            "请假与休假管理规定.md"
+          ],
+          "raw_files": [
+            "考勤管理制度.md",
+            "会议室与办公资源使用规定.md",
+            "员工行为规范与职业道德.md",
+            "员工手册.md",
+            "加班与调休管理规定.md"
+          ],
+          "selected_files": [
+            "考勤管理制度.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 0.6131471927654584,
+          "selected_recall": true,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 24,
+          "elapsed_ms": 208.87279999988095
+        },
+        {
+          "id": "g-04",
+          "category": "aggregation",
+          "hops": 2,
+          "question": "OA 系统上可以提交哪些申请？",
+          "expected_files": [
+            "考勤管理制度.md",
+            "请假与休假管理规定.md",
+            "员工手册.md"
+          ],
+          "raw_files": [
+            "加班与调休管理规定.md",
+            "请假与休假管理规定.md",
+            "员工手册.md",
+            "公车与车辆管理制度.md",
+            "考勤管理制度.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": true,
+          "mrr": 0.5,
+          "ndcg": 0.7122630665145961,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": false,
+          "linked_entities": [
+            "OA",
+            "立项申请",
+            "需求提报"
+          ],
+          "graph_hits": 10,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 198.54730000042764
+        },
+        {
+          "id": "g-05",
+          "category": "indirect",
+          "hops": 2,
+          "question": "新来的同事多久能转正？",
+          "expected_files": [
+            "员工手册.md"
+          ],
+          "raw_files": [
+            "员工手册.md",
+            "新员工入职指南.md",
+            "培训与发展制度.md",
+            "福利与补贴制度.md",
+            "人事部-招聘面试流程.md"
+          ],
+          "selected_files": [
+            "员工手册.md",
+            "新员工入职指南.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.5,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "转正评估"
+          ],
+          "graph_hits": 1,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 21,
+          "elapsed_ms": 231.89629999978933
+        },
+        {
+          "id": "g-06",
+          "category": "multihop",
+          "hops": 2,
+          "question": "销售折扣需要谁审批？",
+          "expected_files": [
+            "销售部内部管理文档.txt"
+          ],
+          "raw_files": [
+            "销售部内部管理文档.txt",
+            "销售部-报价审批流程.md",
+            "销售部内部管理文档.txt",
+            "销售部内部管理文档.txt",
+            "销售合同审批流程.md"
+          ],
+          "selected_files": [
+            "销售部内部管理文档.txt",
+            "销售部-报价审批流程.md",
+            "销售部内部管理文档.txt"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.9306765580733931,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.3333333333333333,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "销售",
+            "折扣审批"
+          ],
+          "graph_hits": 2,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 29,
+          "elapsed_ms": 230.58320000018284
+        },
+        {
+          "id": "g-07",
+          "category": "aggregation",
+          "hops": 2,
+          "question": "客户分几级，按什么标准分？",
+          "expected_files": [
+            "销售部内部管理文档.txt"
+          ],
+          "raw_files": [
+            "销售部-客户分级管理办法.md",
+            "销售部内部管理文档.txt",
+            "销售部订单表.xlsx",
+            "客户投诉处理流程.md",
+            "销售部订单表.xlsx"
+          ],
+          "selected_files": [
+            "销售部-客户分级管理办法.md",
+            "销售部内部管理文档.txt"
+          ],
+          "hit_at_k": true,
+          "mrr": 0.5,
+          "ndcg": 0.6309297535714575,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.5,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "客户分级管理办法",
+            "客户分配",
+            "客户归属"
+          ],
+          "graph_hits": 4,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 31,
+          "elapsed_ms": 237.94420000012906
+        },
+        {
+          "id": "g-08",
+          "category": "control",
+          "hops": 1,
+          "question": "年假有几天？",
+          "expected_files": [
+            "请假与休假管理规定.md"
+          ],
+          "raw_files": [
+            "请假与休假管理规定.md",
+            "员工手册.md",
+            "福利与补贴制度.md",
+            "员工离职交接流程.md",
+            "考勤管理制度.md"
+          ],
+          "selected_files": [
+            "请假与休假管理规定.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "年假"
+          ],
+          "graph_hits": 1,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 20,
+          "elapsed_ms": 195.1908999999432
+        },
+        {
+          "id": "g-09",
+          "category": "control",
+          "hops": 1,
+          "question": "出差住宿标准是多少？",
+          "expected_files": [
+            "差旅费管理办法.md"
+          ],
+          "raw_files": [
+            "差旅费管理办法.md",
+            "福利与补贴制度.md",
+            "报销管理制度.md",
+            "培训与发展制度.md",
+            "考勤管理制度.md"
+          ],
+          "selected_files": [
+            "差旅费管理办法.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "出差"
+          ],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 20,
+          "elapsed_ms": 186.9671999993443
+        },
+        {
+          "id": "g-10",
+          "category": "control",
+          "hops": 1,
+          "question": "报销需要哪些材料？",
+          "expected_files": [
+            "报销管理制度.md"
+          ],
+          "raw_files": [
+            "报销管理制度.md",
+            "差旅费管理办法.md",
+            "公车与车辆管理制度.md",
+            "采购申请与付款流程.md",
+            "培训与发展制度.md"
+          ],
+          "selected_files": [
+            "报销管理制度.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "报销",
+            "报销",
+            "报销管理制度",
+            "报销单",
+            "费用报销实施细则"
+          ],
+          "graph_hits": 7,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 21,
+          "elapsed_ms": 196.81859999946028
+        },
+        {
+          "id": "g-11",
+          "category": "control",
+          "hops": 1,
+          "question": "数据库变更要走什么审批？",
+          "expected_files": [
+            "技术部-数据库变更审批.md"
+          ],
+          "raw_files": [
+            "技术部-数据库变更审批.md",
+            "技术部-发布上线流程.md",
+            "技术部-代码仓库与分支规范.md",
+            "项目立项与验收流程.md",
+            "保密与数据分级规范.md"
+          ],
+          "selected_files": [
+            "技术部-数据库变更审批.md"
+          ],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 1.0,
+          "selected_recall": true,
+          "keyword_hit": true,
+          "noise": 0.0,
+          "refused": false,
+          "expect_refusal": false,
+          "linked_entities": [
+            "数据库变更审批",
+            "数据库管理员"
+          ],
+          "graph_hits": 6,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 231.14929999974265
+        },
+        {
+          "id": "g-12",
+          "category": "cross_department",
+          "hops": 1,
+          "question": "技术部的数据库变更怎么审批？",
+          "expected_files": [],
+          "raw_files": [
+            "项目立项与验收流程.md",
+            "IT服务台支持流程.md",
+            "公司组织架构与部门职责.md",
+            "保密与数据分级规范.md",
+            "固定资产管理办法.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": false,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": true,
+          "linked_entities": [
+            "技术部",
+            "数据库变更审批",
+            "数据库管理员"
+          ],
+          "graph_hits": 5,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 20,
+          "elapsed_ms": 175.78649999995832
+        },
+        {
+          "id": "g-13",
+          "category": "no_answer",
+          "hops": 1,
+          "question": "公司股票期权怎么分配？",
+          "expected_files": [],
+          "raw_files": [
+            "公司组织架构与部门职责.md",
+            "福利与补贴制度.md",
+            "员工手册.md",
+            "人事部-绩效评估制度.md",
+            "新员工入职指南.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": false,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": true,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 23,
+          "elapsed_ms": 198.1223000002501
+        },
+        {
+          "id": "g-14",
+          "category": "no_answer",
+          "hops": 1,
+          "question": "竞争对手给员工开多少工资？",
+          "expected_files": [],
+          "raw_files": [
+            "福利与补贴制度.md",
+            "工资发放与个税说明.md",
+            "公司组织架构与部门职责.md",
+            "员工手册.md",
+            "人事部-招聘面试流程.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": false,
+          "mrr": 0.0,
+          "ndcg": 0.0,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": true,
+          "linked_entities": [],
+          "graph_hits": 0,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 21,
+          "elapsed_ms": 188.22219999947265
+        },
+        {
+          "id": "g-15",
+          "category": "multihop",
+          "hops": 2,
+          "question": "请年假需要经过哪几个人审批？",
+          "expected_files": [
+            "请假与休假管理规定.md",
+            "员工手册.md"
+          ],
+          "raw_files": [
+            "请假与休假管理规定.md",
+            "考勤管理制度.md",
+            "员工手册.md",
+            "公司组织架构与部门职责.md",
+            "报销管理制度.md"
+          ],
+          "selected_files": [],
+          "hit_at_k": true,
+          "mrr": 1.0,
+          "ndcg": 0.9197207891481876,
+          "selected_recall": false,
+          "keyword_hit": false,
+          "noise": 0.0,
+          "refused": true,
+          "expect_refusal": false,
+          "linked_entities": [
+            "年假"
+          ],
+          "graph_hits": 1,
+          "graph_only": 0,
+          "graph_only_selected": 0,
+          "pool_size": 24,
+          "elapsed_ms": 296.3518999995358
+        }
+      ]
+    }
+  }
+}

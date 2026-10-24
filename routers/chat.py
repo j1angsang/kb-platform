@@ -19,6 +19,7 @@ from models.chat_session import ChatSession
 from models.user import User
 from routers.auth import get_current_user
 from schemas.chat import ChatMessageOut, ChatSessionOut
+from tools._retry import status_code
 from services.memory import (
     CHECKPOINT_MESSAGE_WINDOW,
     delete_thread_checkpoint,
@@ -296,12 +297,21 @@ async def chat_ask(
             thread_id=thread_id_for(session.id),
             long_term_memory=memory_text,
         )
-    except Exception:
+    except Exception as exc:
         logger.exception(
             "chat.ask failed user_id=%s department=%s message_chars=%d history_turns=%d elapsed_ms=%.1f",
             current_user.id, current_user.department or "未分配",
             len(payload.message), len(seed_history), (time.perf_counter() - started) * 1000,
         )
+        # 供应商侧 401/402/403（额度不足、Key 失效）不是产品故障，但裸 500 会让用户
+        # 以为是系统坏了。is_retryable 只放行 >=500，所以这类错误既不重试也不降级，
+        # 必须在这里翻译成能指向根因的 503。
+        code = status_code(exc)
+        if code in (401, 402, 403):
+            raise HTTPException(
+                status_code=503,
+                detail=f"对话模型服务不可用（HTTP {code}）：通常是账户额度不足或 API Key 失效，请联系管理员",
+            ) from exc
         raise
     sources = result.get("sources", [])
     data_sources = result.get("data_sources", [])
