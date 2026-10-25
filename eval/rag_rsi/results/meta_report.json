@@ -1,0 +1,131 @@
+{
+  "meta": {
+    "case_count": 134,
+    "dev": 67,
+    "test": 67,
+    "folds": 3
+  },
+  "baseline": {
+    "test": 0.8209
+  },
+  "strategies": [
+    {
+      "strategy": "threshold_only",
+      "synonyms_count": 0,
+      "config": {
+        "synonyms": {},
+        "min_score": 3.0,
+        "top_k": 5
+      },
+      "train_quality": 0.8597,
+      "fold_scores": [
+        0.8667,
+        0.9,
+        0.8095
+      ],
+      "meta_val_mean": 0.8587,
+      "meta_score": 0.8587
+    },
+    {
+      "strategy": "generic_synonyms",
+      "synonyms_count": 2,
+      "config": {
+        "synonyms": {
+          "何时": [
+            "什么时候"
+          ],
+          "几点": [
+            "什么时间"
+          ]
+        },
+        "min_score": 3.0,
+        "top_k": 5
+      },
+      "train_quality": 0.8597,
+      "fold_scores": [
+        0.8667,
+        0.9,
+        0.8095
+      ],
+      "meta_val_mean": 0.8587,
+      "meta_score": 0.8487
+    },
+    {
+      "strategy": "domain_synonyms",
+      "synonyms_count": 20,
+      "config": {
+        "synonyms": {
+          "年假": [
+            "请假",
+            "休假"
+          ],
+          "报销": [
+            "费用",
+            "发票"
+          ],
+          "出差": [
+            "差旅",
+            "住宿"
+          ],
+          "采购": [
+            "付款",
+            "审批"
+          ],
+          "入职": [
+            "试用期",
+            "转正"
+          ],
+          "离职": [
+            "交接",
+            "减员"
+          ],
+          "发布": [
+            "上线",
+            "回滚"
+          ],
+          "数据库": [
+            "变更",
+            "备份"
+          ],
+          "访客": [
+            "门禁",
+            "登记"
+          ],
+          "绩效": [
+            "评估",
+            "面谈"
+          ]
+        },
+        "min_score": 5.0,
+        "top_k": 5
+      },
+      "train_quality": 0.9269,
+      "fold_scores": [
+        0.8875,
+        0.9909,
+        0.8571
+      ],
+      "meta_val_mean": 0.9118,
+      "meta_score": 0.8118
+    }
+  ],
+  "selected": {
+    "strategy": "threshold_only",
+    "config": {
+      "synonyms": {},
+      "min_score": 3.0,
+      "top_k": 5
+    },
+    "meta_val_mean": 0.8587,
+    "test_quality": 0.8806,
+    "test_gate": {
+      "accepted": true,
+      "reasons": []
+    }
+  },
+  "committed_config": {
+    "synonyms": {},
+    "min_score": 3.0,
+    "top_k": 5
+  }
+}

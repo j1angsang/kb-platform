@@ -242,6 +242,7 @@ RAG 评测与 RSI 最小闭环（60 份语料、134 题、dev/test 各 67）：
 ```bash
 python eval/rag_rsi/run_loop.py
 python eval/rag_rsi/rsi_min_loop.py --model qwen3.5:4b-q4_K_M --rounds 3 --reset
+python eval/rag_rsi/meta_loop.py
 ```
 
 详见 [eval/rag_rsi/README.md](eval/rag_rsi/README.md)。

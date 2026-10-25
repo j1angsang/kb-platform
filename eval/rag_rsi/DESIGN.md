@@ -53,6 +53,20 @@
 
 不能改代码、评测集或业务规则。
 
+### `meta_loop.py`
+
+外层回答“哪种改进方式更稳”：
+
+```text
+3 折 meta cross-validation
+  -> 每折：用 2/3 dev 拟合策略，1/3 dev 验证
+  -> 比较策略均值，并惩罚更复杂的策略
+  -> 选出策略后，在全量 dev 上拟合最终配置
+  -> test 只做一次审计
+```
+
+当前策略空间是固定的三种：`threshold_only`、`generic_synonyms`、`domain_synonyms`。
+
 ## 目录
 
 | 路径 | 作用 |
@@ -61,14 +75,17 @@
 | `eval_set.jsonl` | 题集 |
 | `run_loop.py` | 检索配置闭环 |
 | `rsi_min_loop.py` | 任务级 RSI 最小闭环 |
+| `meta_loop.py` | 外层改进策略选择 |
+| `meta_policy.json` | 外层选中的策略配置 |
 | `rsi_workspace/config.json` | 当前配置 |
 | `rsi_workspace/history/` | 每轮诊断、diff、指标、决策 |
 | `results/report.md` | 检索配置结果 |
 | `results/rsi_min_report.md` | RSI 逐轮结果 |
+| `results/meta_report.md` | 外层策略选择结果 |
 
 ## 边界
 
 - 离线 BM25，不是实际 pgvector；
 - synthetic 文档是评测夹具，不是公司真实制度；
-- 不是完整 RSI，没有递归改进“改进方法本身”；
+- 外层只做有限策略选择，不是开放式自我改写；
 - 不自动上线，配置只写本地实验目录。
