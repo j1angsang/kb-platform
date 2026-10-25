@@ -223,18 +223,6 @@ KG_CANDIDATE_TOP_K=12
 .venv\Scripts\python.exe eval\run_graph.py --graph both
 ```
 
-## 深入阅读
-
-- [检索融合改造报告：Weighted → RRF](docs/RRF_CHANGE_REPORT.md)
-- [切分与 Prompt injection 防护](docs/CHUNKING_AND_INJECTION.md)
-- [对象存储改造报告](docs/OBJECT_STORAGE_REPORT.md)
-- [受限 Text2SQL 改造报告](docs/TEXT2SQL_REPORT.md)
-- [Vue 前端改造报告](docs/FRONTEND_REPORT.md)
-- [知识图谱接入：评估](docs/GRAPH_RAG_ASSESSMENT.md)
-- [知识图谱接入：实现报告](docs/GRAPH_IMPLEMENTATION.md)
-- [Agent 七维评测](docs/AGENT_EVAL.md)
-- [Agent 架构](agents/ARCHITECTURE.md)
-
 ## 评测
 
 检索评测题集与脚本见 [eval/README.md](eval/README.md)，不调用 LLM：
@@ -346,7 +334,7 @@ pnpm build
 | docker-compose.yml / Dockerfile | PostgreSQL + Redis + MinIO + App 一键启动 |
 | rag/ | parser / embeddings / fusion / store / indexer / bm25 |
 | rag/graph/ | 知识图谱：extract 受限抽取 / resolve 三层消歧 / link 实体链接 / store 多跳查询 / pipeline 单文档编排 |
-| docs/ | 检索融合、切分与注入防护、对象存储、Text2SQL 的改造报告 |
+| docs/ | 内部设计资料（不对外索引） |
 | eval/ | 检索评测题集、Text2SQL 评测题集、指标与可复跑脚本 |
 | agents/ | create_agent + 钩子，企业问答编排，见 [agents/ARCHITECTURE.md](agents/ARCHITECTURE.md) |
 | tools/ | 知识检索、文档列表、员工查询工具 |
