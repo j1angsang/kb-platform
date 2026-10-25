@@ -41,7 +41,6 @@ rrf(d) = Σ_i  w_i / (k + rank_i(d))     # rank 从 1 开始，k 常用 60
 | `.env.example` | 新增 `SEARCH_FUSION`、`RRF_K`，并注明 `SEARCH_MIN_SCORE` / `SEARCH_MAX_DROP` 在 RRF 模式下作用于 `_relevance_score` |
 | `README.md` | 补充 RRF 设计说明与评测入口 |
 | `eval/` | 新增评测题集、指标与可复跑脚本 |
-| `docs/RRF_CODE_WALKTHROUGH.md` | 逐行代码讲解 |
 
 没有改：数据库表、API 响应字段、上传/审核/权限逻辑、Agent 工具签名。
 
