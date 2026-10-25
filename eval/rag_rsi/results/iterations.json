@@ -1,0 +1,1708 @@
+{
+  "meta": {
+    "note": "离线 BM25 任务级闭环，不是完整 RSI；不调用 LLM，不上线。",
+    "cases": 134,
+    "dev": 67,
+    "test": 67,
+    "editor": "ollama"
+  },
+  "baseline": {
+    "dev": {
+      "quality": 0.8,
+      "recall_at_5": 1.0,
+      "mrr": 0.9811,
+      "refusal_accuracy": 0.0714,
+      "noise": 0.6962,
+      "by_category": {
+        "knowledge": 0.9875,
+        "lexical": 1.0,
+        "no_answer": 0.1111,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "k-09",
+          "question": "试用期一般多久？最长能到多久？",
+          "expected": [
+            "员工手册.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 7.859
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.5588
+            },
+            {
+              "filename": "新员工入职指南.md",
+              "score": 6.8018
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-01",
+          "question": "公司食堂午餐几点开始供应？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "外包与供应商开发安全规范.md",
+              "score": 2.8265
+            },
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-03",
+          "question": "公司年会什么时候举办？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            },
+            {
+              "filename": "信息安全与IT使用规范.md",
+              "score": 2.047
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-05",
+          "question": "帮我写一段 Python 快速排序代码。",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "技术部-代码仓库与分支规范.md",
+              "score": 3.6324
+            },
+            {
+              "filename": "外包与供应商开发安全规范.md",
+              "score": 1.5699
+            },
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 1.549
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-07",
+          "question": "员工可以带宠物上班吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "行政部-访客接待与门禁管理.md",
+              "score": 1.0377
+            },
+            {
+              "filename": "办公环境与安全管理.md",
+              "score": 0.9231
+            },
+            {
+              "filename": "公文发布与会议纪要流程.md",
+              "score": 0.9092
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-01",
+          "question": "技术部员工能查人事部的年假规定吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 6.4684
+            },
+            {
+              "filename": "项目立项与验收流程.md",
+              "score": 2.3743
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 1.9195
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-03",
+          "question": "销售部员工能查财务部的报销材料吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "销售部-报价审批流程.md",
+              "score": 3.7808
+            },
+            {
+              "filename": "销售合同审批流程.md",
+              "score": 1.4043
+            },
+            {
+              "filename": "销售部-客户分级管理办法.md",
+              "score": 1.4019
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "k-41",
+          "question": "采购审批后为什么要找三家供应商？",
+          "expected": [
+            "采购申请与付款流程.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "供应商付款账期规定.md",
+              "score": 9.52
+            },
+            {
+              "filename": "采购申请与付款流程.md",
+              "score": 8.4636
+            },
+            {
+              "filename": "财务部-发票与税务申报流程.md",
+              "score": 2.375
+            }
+          ],
+          "score": 0.8
+        }
+      ]
+    },
+    "test": {
+      "quality": 0.8209,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "refusal_accuracy": 0.0769,
+      "noise": 0.7568,
+      "by_category": {
+        "knowledge": 1.0,
+        "lexical": 1.0,
+        "no_answer": 0.1111,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "n-02",
+          "question": "公司有班车吗？班车路线是什么？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            },
+            {
+              "filename": "信息安全与IT使用规范.md",
+              "score": 2.047
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-06",
+          "question": "公司有健身房吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            },
+            {
+              "filename": "信息安全与IT使用规范.md",
+              "score": 2.047
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-08",
+          "question": "公司股票代码是多少？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "报销管理制度.md",
+              "score": 1.4109
+            },
+            {
+              "filename": "工资发放与个税说明.md",
+              "score": 1.3976
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-02",
+          "question": "人事部员工能查技术部的数据库变更审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 5.6439
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 4.469
+            },
+            {
+              "filename": "考勤管理制度.md",
+              "score": 3.4918
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-04",
+          "question": "财务部员工能查销售部的合同审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "财务部-发票与税务申报流程.md",
+              "score": 5.8501
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.0986
+            },
+            {
+              "filename": "财务部-预算管理流程.md",
+              "score": 3.032
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-10",
+          "question": "公司有员工持股计划吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.4861
+            },
+            {
+              "filename": "工资发放与个税说明.md",
+              "score": 2.7952
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-12",
+          "question": "公司一共有几家分公司？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "印章与文件管理.md",
+              "score": 1.959
+            },
+            {
+              "filename": "邮箱与即时通讯使用规范.md",
+              "score": 1.8271
+            },
+            {
+              "filename": "公文发布与会议纪要流程.md",
+              "score": 1.7695
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-14",
+          "question": "年假没休完可以折现吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "请假与休假管理规定.md",
+              "score": 3.1235
+            },
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 1.841
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "config": {
+      "synonyms": {},
+      "min_score": 0.0,
+      "top_k": 5
+    }
+  },
+  "round1": {
+    "dev": {
+      "quality": 0.7925,
+      "recall_at_5": 1.0,
+      "mrr": 0.967,
+      "refusal_accuracy": 0.0714,
+      "noise": 0.6962,
+      "by_category": {
+        "knowledge": 0.9719,
+        "lexical": 1.0,
+        "no_answer": 0.1111,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "k-09",
+          "question": "试用期一般多久？最长能到多久？",
+          "expected": [
+            "员工手册.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 7.859
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.5588
+            },
+            {
+              "filename": "新员工入职指南.md",
+              "score": 6.8018
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-01",
+          "question": "公司食堂午餐几点开始供应？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "外包与供应商开发安全规范.md",
+              "score": 2.8265
+            },
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-03",
+          "question": "公司年会什么时候举办？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            },
+            {
+              "filename": "信息安全与IT使用规范.md",
+              "score": 2.047
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-05",
+          "question": "帮我写一段 Python 快速排序代码。",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "技术部-代码仓库与分支规范.md",
+              "score": 3.6324
+            },
+            {
+              "filename": "外包与供应商开发安全规范.md",
+              "score": 1.5699
+            },
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 1.549
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-07",
+          "question": "员工可以带宠物上班吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "行政部-访客接待与门禁管理.md",
+              "score": 1.0377
+            },
+            {
+              "filename": "办公环境与安全管理.md",
+              "score": 0.9231
+            },
+            {
+              "filename": "公文发布与会议纪要流程.md",
+              "score": 0.9092
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-01",
+          "question": "技术部员工能查人事部的年假规定吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 6.4684
+            },
+            {
+              "filename": "项目立项与验收流程.md",
+              "score": 2.3743
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 1.9195
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-03",
+          "question": "销售部员工能查财务部的报销材料吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "销售部-报价审批流程.md",
+              "score": 3.7808
+            },
+            {
+              "filename": "销售合同审批流程.md",
+              "score": 1.4043
+            },
+            {
+              "filename": "销售部-客户分级管理办法.md",
+              "score": 1.4019
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "k-19",
+          "question": "入职一个月内要完成哪些培训？",
+          "expected": [
+            "培训与发展制度.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "新员工入职指南.md",
+              "score": 10.4982
+            },
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 7.745
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.6499
+            }
+          ],
+          "score": 0.5
+        }
+      ]
+    },
+    "test": {
+      "quality": 0.8104,
+      "recall_at_5": 1.0,
+      "mrr": 0.9769,
+      "refusal_accuracy": 0.0769,
+      "noise": 0.7577,
+      "by_category": {
+        "knowledge": 0.98,
+        "lexical": 1.0,
+        "no_answer": 0.1111,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "k-06",
+          "question": "采购多少钱需要走什么审批？",
+          "expected": [
+            "采购申请与付款流程.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "供应商付款账期规定.md",
+              "score": 6.6748
+            },
+            {
+              "filename": "采购申请与付款流程.md",
+              "score": 6.5578
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.2565
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-02",
+          "question": "公司有班车吗？班车路线是什么？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            },
+            {
+              "filename": "信息安全与IT使用规范.md",
+              "score": 2.047
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-06",
+          "question": "公司有健身房吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 2.6563
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 2.0561
+            },
+            {
+              "filename": "信息安全与IT使用规范.md",
+              "score": 2.047
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-08",
+          "question": "公司股票代码是多少？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "报销管理制度.md",
+              "score": 1.4109
+            },
+            {
+              "filename": "工资发放与个税说明.md",
+              "score": 1.3976
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-02",
+          "question": "人事部员工能查技术部的数据库变更审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 5.6439
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 4.469
+            },
+            {
+              "filename": "考勤管理制度.md",
+              "score": 3.4918
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-04",
+          "question": "财务部员工能查销售部的合同审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "财务部-发票与税务申报流程.md",
+              "score": 5.8501
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.0986
+            },
+            {
+              "filename": "财务部-预算管理流程.md",
+              "score": 3.032
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "k-21",
+          "question": "入职多久可以参加公司体检？",
+          "expected": [
+            "福利与补贴制度.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "新员工入职指南.md",
+              "score": 8.101
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.2648
+            },
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 6.6289
+            }
+          ],
+          "score": 0.5
+        },
+        {
+          "id": "n-10",
+          "question": "公司有员工持股计划吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.4861
+            },
+            {
+              "filename": "工资发放与个税说明.md",
+              "score": 2.7952
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "log": [
+      {
+        "action": "ollama_select_rules",
+        "rules": [
+          "入职",
+          "采购",
+          "离职",
+          "绩效"
+        ]
+      }
+    ],
+    "accepted": false,
+    "gate_reasons": [
+      "test quality 从 0.8209 降到 0.8104",
+      "test knowledge 从 1.0 降到 0.98",
+      "dev quality 没有提升（0.8 -> 0.7925），不提交"
+    ],
+    "config": {
+      "synonyms": {
+        "采购": [
+          "付款",
+          "审批"
+        ],
+        "入职": [
+          "试用期",
+          "转正"
+        ],
+        "离职": [
+          "交接",
+          "减员",
+          "离开公司"
+        ],
+        "绩效": [
+          "评估",
+          "面谈"
+        ]
+      },
+      "min_score": 0.0,
+      "top_k": 5
+    }
+  },
+  "round2": {
+    "dev": {
+      "quality": 0.8597,
+      "recall_at_5": 1.0,
+      "mrr": 0.9811,
+      "refusal_accuracy": 0.3571,
+      "noise": 0.3211,
+      "by_category": {
+        "knowledge": 0.9875,
+        "lexical": 1.0,
+        "no_answer": 0.5556,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "k-09",
+          "question": "试用期一般多久？最长能到多久？",
+          "expected": [
+            "员工手册.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 7.859
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.5588
+            },
+            {
+              "filename": "新员工入职指南.md",
+              "score": 6.8018
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-05",
+          "question": "帮我写一段 Python 快速排序代码。",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "技术部-代码仓库与分支规范.md",
+              "score": 3.6324
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-01",
+          "question": "技术部员工能查人事部的年假规定吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 6.4684
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-03",
+          "question": "销售部员工能查财务部的报销材料吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "销售部-报价审批流程.md",
+              "score": 3.7808
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "k-41",
+          "question": "采购审批后为什么要找三家供应商？",
+          "expected": [
+            "采购申请与付款流程.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "供应商付款账期规定.md",
+              "score": 9.52
+            },
+            {
+              "filename": "采购申请与付款流程.md",
+              "score": 8.4636
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-11",
+          "question": "公司提供心理咨询服务吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工手册.md",
+              "score": 4.686
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-15",
+          "question": "公司实行四天工作制吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "邮箱与即时通讯使用规范.md",
+              "score": 3.1784
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-10",
+          "question": "人事部员工能查技术部的数据备份流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 6.9368
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 4.469
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "test": {
+      "quality": 0.8806,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "refusal_accuracy": 0.3846,
+      "noise": 0.3812,
+      "by_category": {
+        "knowledge": 1.0,
+        "lexical": 1.0,
+        "no_answer": 0.5556,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "p-02",
+          "question": "人事部员工能查技术部的数据库变更审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 5.6439
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 4.469
+            },
+            {
+              "filename": "考勤管理制度.md",
+              "score": 3.4918
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-04",
+          "question": "财务部员工能查销售部的合同审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "财务部-发票与税务申报流程.md",
+              "score": 5.8501
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.0986
+            },
+            {
+              "filename": "财务部-预算管理流程.md",
+              "score": 3.032
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-10",
+          "question": "公司有员工持股计划吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.4861
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-14",
+          "question": "年假没休完可以折现吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "请假与休假管理规定.md",
+              "score": 3.1235
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-16",
+          "question": "员工生日有生日假吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "福利与补贴制度.md",
+              "score": 11.3943
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-11",
+          "question": "财务部员工能查技术部的发布上线流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "固定资产管理办法.md",
+              "score": 3.6662
+            },
+            {
+              "filename": "财务部-预算管理流程.md",
+              "score": 3.5904
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.1675
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-13",
+          "question": "技术部员工能查财务部的预算流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "项目立项与验收流程.md",
+              "score": 10.2336
+            },
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 4.2558
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 3.3285
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-18",
+          "question": "今年调薪平均涨幅是多少？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "社保与公积金办理指南.md",
+              "score": 4.8078
+            },
+            {
+              "filename": "薪酬调整管理办法.md",
+              "score": 3.8164
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "log": [
+      {
+        "action": "raise_min_score",
+        "from": 0.0,
+        "to": 3.0,
+        "dev_quality_before": 0.8,
+        "dev_quality_after": 0.8597,
+        "diff": {
+          "added_synonyms": {},
+          "min_score": {
+            "from": 0.0,
+            "to": 3.0
+          },
+          "top_k": {
+            "from": 5,
+            "to": 5
+          }
+        }
+      }
+    ],
+    "accepted": true,
+    "gate_reasons": [],
+    "config": {
+      "synonyms": {},
+      "min_score": 3.0,
+      "top_k": 5
+    }
+  },
+  "aggressive": {
+    "dev": {
+      "quality": 0.8821,
+      "recall_at_5": 0.9623,
+      "mrr": 0.9261,
+      "refusal_accuracy": 0.6429,
+      "noise": 0.1377,
+      "by_category": {
+        "knowledge": 0.9094,
+        "lexical": 1.0,
+        "no_answer": 0.7778,
+        "permission": 0.7
+      },
+      "failures": [
+        {
+          "id": "k-09",
+          "question": "试用期一般多久？最长能到多久？",
+          "expected": [
+            "员工手册.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 10.4838
+            },
+            {
+              "filename": "新员工入职指南.md",
+              "score": 9.6543
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 9.355
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "k-17",
+          "question": "工资每月几号发？",
+          "expected": [
+            "工资发放与个税说明.md"
+          ],
+          "top_hits": [],
+          "score": 0.0
+        },
+        {
+          "id": "n-05",
+          "question": "帮我写一段 Python 快速排序代码。",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "技术部-代码仓库与分支规范.md",
+              "score": 16.0425
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-01",
+          "question": "技术部员工能查人事部的年假规定吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 6.4684
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "k-19",
+          "question": "入职一个月内要完成哪些培训？",
+          "expected": [
+            "培训与发展制度.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "新员工入职指南.md",
+              "score": 10.4982
+            },
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 7.745
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.6499
+            }
+          ],
+          "score": 0.5
+        },
+        {
+          "id": "k-41",
+          "question": "采购审批后为什么要找三家供应商？",
+          "expected": [
+            "采购申请与付款流程.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "供应商付款账期规定.md",
+              "score": 16.2631
+            },
+            {
+              "filename": "采购申请与付款流程.md",
+              "score": 11.3018
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "p-10",
+          "question": "人事部员工能查技术部的数据备份流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 6.9368
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-12",
+          "question": "行政部员工能查人事部的绩效制度吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "公司组织架构与部门职责.md",
+              "score": 7.4082
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "test": {
+      "quality": 0.9149,
+      "recall_at_5": 0.963,
+      "mrr": 0.9398,
+      "refusal_accuracy": 0.7692,
+      "noise": 0.2062,
+      "by_category": {
+        "knowledge": 0.9514,
+        "lexical": 1.0,
+        "no_answer": 0.7778,
+        "permission": 0.75
+      },
+      "failures": [
+        {
+          "id": "k-06",
+          "question": "采购多少钱需要走什么审批？",
+          "expected": [
+            "采购申请与付款流程.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "供应商付款账期规定.md",
+              "score": 6.6748
+            },
+            {
+              "filename": "采购申请与付款流程.md",
+              "score": 6.5578
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "p-06",
+          "question": "行政部员工查印章使用规定",
+          "expected": [
+            "印章与文件管理.md"
+          ],
+          "top_hits": [],
+          "score": 0.0
+        },
+        {
+          "id": "k-21",
+          "question": "入职多久可以参加公司体检？",
+          "expected": [
+            "福利与补贴制度.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "新员工入职指南.md",
+              "score": 8.101
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.2648
+            },
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 6.6289
+            }
+          ],
+          "score": 0.5
+        },
+        {
+          "id": "k-23",
+          "question": "公司下设哪些部门？",
+          "expected": [
+            "公司组织架构与部门职责.md"
+          ],
+          "top_hits": [],
+          "score": 0.0
+        },
+        {
+          "id": "n-14",
+          "question": "年假没休完可以折现吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "请假与休假管理规定.md",
+              "score": 8.0299
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-16",
+          "question": "员工生日有生日假吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "福利与补贴制度.md",
+              "score": 11.3943
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-13",
+          "question": "技术部员工能查财务部的预算流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "项目立项与验收流程.md",
+              "score": 10.2336
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "accepted": false,
+    "gate_reasons": [
+      "test Recall@5 从 1.0 降到 0.963",
+      "test knowledge 从 1.0 降到 0.9514"
+    ],
+    "config": {
+      "synonyms": {
+        "年假": [
+          "请假",
+          "休假"
+        ],
+        "请假": [
+          "年假",
+          "休假"
+        ],
+        "休假": [
+          "年假",
+          "请假"
+        ],
+        "报销": [
+          "费用",
+          "发票",
+          "明细"
+        ],
+        "发票": [
+          "报销",
+          "消费明细"
+        ],
+        "出差": [
+          "差旅",
+          "住宿"
+        ],
+        "差旅": [
+          "出差",
+          "住宿"
+        ],
+        "采购": [
+          "付款",
+          "审批"
+        ],
+        "入职": [
+          "试用期",
+          "转正"
+        ],
+        "试用期": [
+          "入职",
+          "转正"
+        ],
+        "离职": [
+          "交接",
+          "减员",
+          "离开公司"
+        ],
+        "合同": [
+          "评审",
+          "用章",
+          "老板"
+        ],
+        "投诉": [
+          "响应",
+          "方案"
+        ],
+        "密码": [
+          "账号",
+          "特殊字符"
+        ],
+        "VPN": [
+          "远程办公",
+          "内网",
+          "网络账号"
+        ],
+        "会议室": [
+          "预订",
+          "取消"
+        ],
+        "邮件": [
+          "签名",
+          "企业微信"
+        ],
+        "代码": [
+          "分支",
+          "合并",
+          "主分支"
+        ],
+        "发布": [
+          "上线",
+          "回滚",
+          "旧版本"
+        ],
+        "回滚": [
+          "发布",
+          "事故"
+        ],
+        "数据库": [
+          "变更",
+          "备份"
+        ],
+        "预算": [
+          "编制",
+          "审批"
+        ],
+        "报价": [
+          "折扣",
+          "审批"
+        ],
+        "访客": [
+          "门禁",
+          "登记"
+        ],
+        "绩效": [
+          "评估",
+          "面谈"
+        ],
+        "招聘": [
+          "面试",
+          "录用"
+        ]
+      },
+      "min_score": 6.0,
+      "top_k": 5
+    }
+  },
+  "committed": {
+    "dev": {
+      "quality": 0.8597,
+      "recall_at_5": 1.0,
+      "mrr": 0.9811,
+      "refusal_accuracy": 0.3571,
+      "noise": 0.3211,
+      "by_category": {
+        "knowledge": 0.9875,
+        "lexical": 1.0,
+        "no_answer": 0.5556,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "k-09",
+          "question": "试用期一般多久？最长能到多久？",
+          "expected": [
+            "员工手册.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "员工转正评估细则.md",
+              "score": 7.859
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 7.5588
+            },
+            {
+              "filename": "新员工入职指南.md",
+              "score": 6.8018
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-05",
+          "question": "帮我写一段 Python 快速排序代码。",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "技术部-代码仓库与分支规范.md",
+              "score": 3.6324
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-01",
+          "question": "技术部员工能查人事部的年假规定吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 6.4684
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-03",
+          "question": "销售部员工能查财务部的报销材料吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "销售部-报价审批流程.md",
+              "score": 3.7808
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "k-41",
+          "question": "采购审批后为什么要找三家供应商？",
+          "expected": [
+            "采购申请与付款流程.md"
+          ],
+          "top_hits": [
+            {
+              "filename": "供应商付款账期规定.md",
+              "score": 9.52
+            },
+            {
+              "filename": "采购申请与付款流程.md",
+              "score": 8.4636
+            }
+          ],
+          "score": 0.8
+        },
+        {
+          "id": "n-11",
+          "question": "公司提供心理咨询服务吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工手册.md",
+              "score": 4.686
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-15",
+          "question": "公司实行四天工作制吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "邮箱与即时通讯使用规范.md",
+              "score": 3.1784
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-10",
+          "question": "人事部员工能查技术部的数据备份流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 6.9368
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 4.469
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "test": {
+      "quality": 0.8806,
+      "recall_at_5": 1.0,
+      "mrr": 1.0,
+      "refusal_accuracy": 0.3846,
+      "noise": 0.3812,
+      "by_category": {
+        "knowledge": 1.0,
+        "lexical": 1.0,
+        "no_answer": 0.5556,
+        "permission": 0.5
+      },
+      "failures": [
+        {
+          "id": "p-02",
+          "question": "人事部员工能查技术部的数据库变更审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "员工离职交接流程.md",
+              "score": 5.6439
+            },
+            {
+              "filename": "员工手册.md",
+              "score": 4.469
+            },
+            {
+              "filename": "考勤管理制度.md",
+              "score": 3.4918
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-04",
+          "question": "财务部员工能查销售部的合同审批吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "财务部-发票与税务申报流程.md",
+              "score": 5.8501
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.0986
+            },
+            {
+              "filename": "财务部-预算管理流程.md",
+              "score": 3.032
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-10",
+          "question": "公司有员工持股计划吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.4861
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-14",
+          "question": "年假没休完可以折现吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "请假与休假管理规定.md",
+              "score": 3.1235
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-16",
+          "question": "员工生日有生日假吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "福利与补贴制度.md",
+              "score": 11.3943
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-11",
+          "question": "财务部员工能查技术部的发布上线流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "固定资产管理办法.md",
+              "score": 3.6662
+            },
+            {
+              "filename": "财务部-预算管理流程.md",
+              "score": 3.5904
+            },
+            {
+              "filename": "报销管理制度.md",
+              "score": 3.1675
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "p-13",
+          "question": "技术部员工能查财务部的预算流程吗？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "项目立项与验收流程.md",
+              "score": 10.2336
+            },
+            {
+              "filename": "知识产权与专利管理办法.md",
+              "score": 4.2558
+            },
+            {
+              "filename": "保密与数据分级规范.md",
+              "score": 3.3285
+            }
+          ],
+          "score": 0.0
+        },
+        {
+          "id": "n-18",
+          "question": "今年调薪平均涨幅是多少？",
+          "expected": [],
+          "top_hits": [
+            {
+              "filename": "社保与公积金办理指南.md",
+              "score": 4.8078
+            },
+            {
+              "filename": "薪酬调整管理办法.md",
+              "score": 3.8164
+            }
+          ],
+          "score": 0.0
+        }
+      ]
+    },
+    "config": {
+      "synonyms": {},
+      "min_score": 3.0,
+      "top_k": 5
+    }
+  }
+}

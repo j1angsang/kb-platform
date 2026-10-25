@@ -253,6 +253,15 @@ Text2SQL 评测（20 题，调用 LLM 生成 SQL）：
 .venv\Scripts\python.exe eval\run_text2sql.py
 ```
 
+RAG 评测与 RSI 最小闭环（60 份语料、134 题、dev/test 各 67）：
+
+```bash
+python eval/rag_rsi/run_loop.py
+python eval/rag_rsi/rsi_min_loop.py --model qwen3.5:4b-q4_K_M --rounds 3 --reset
+```
+
+详见 [eval/rag_rsi/README.md](eval/rag_rsi/README.md)。
+
 ## 对象存储（MinIO/S3）
 
 默认 `STORAGE_BACKEND=local`，本地文件就是唯一实体。切到 `s3` 后：
