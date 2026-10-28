@@ -488,7 +488,13 @@ async def rag_hook(state: dict, runtime) -> dict | None:
             # 弱证据必须在块之前说明性质：否则模型会把"答不全"当成"没有"。
             # 实测原句是"你好我的年假还有多久"，资料是《请假与休假管理规定》的年假条款，
             # rerank 0.708 没过 0.9 被丢，模型于是宣称"知识库里没有年假政策"。
-            hint = f"{WEAK_EVIDENCE_HINT}\n" if weak_hits else ""
+            # 弱证据时也允许改写重试一次：拿到的是"最接近"而非"最贴切"，换个说法可能更好。
+            hint = ""
+            if weak_hits:
+                hint = (
+                    f"{WEAK_EVIDENCE_HINT}\n"
+                    "如果换个说法能查到更贴切的资料，可以调用 retry_search 重试一次（最多一次）。\n"
+                )
             new_messages.append(SystemMessage(
                 content=f"[知识库参考]\n{INJECTION_INSTRUCTION}\n{hint}{knowledge}"
             ))
@@ -505,8 +511,11 @@ async def rag_hook(state: dict, runtime) -> dict | None:
             else:
                 # 措辞必须留有余地：写"没有相关内容"时，模型会加工成"知识库里没有 X 政策"，
                 # 而它其实并不知道库里有没有那个制度，只知道这次没检索到。
+                # 同时给一条重试出口：首轮用口语问法常常召不回正式文档，允许改写后再查一次。
                 refusal = ("[知识库参考] 本次检索没有找到与该问题直接相关的材料。"
-                           "请如实告知用户你无法从知识库确认。"
+                           "你可以调用 retry_search 换一种说法再查一次（把口语换成文档里的正式说法，"
+                           "例如把「年假能攒着吗」改成「年假 跨年累计」），但只重试一次。"
+                           "重试仍无结果时，请如实告知用户你无法从知识库确认。"
                            "如果用户问的是某个具体制度或政策，只能说「这次没检索到相关材料」，"
                            "不要断言该制度不存在，也不要把具体制度名说成「知识库里没有」。")
             new_messages.append(SystemMessage(content=refusal))

@@ -14,6 +14,7 @@ from rag.bm25 import BM25Index
 from rag.embeddings import embed_image, embed_query, embed_texts
 from rag.fusion import normalize_scores, rrf_fuse
 from rag.graph.config import KG_CANDIDATE_TOP_K, KG_ENABLED
+from rag.permission import permission_clause
 from rag.rerank import RERANK_ENABLED, RERANK_MIN_SCORE, RERANK_TOP_N, rerank
 from services.storage import STORAGE_DIR
 
@@ -351,19 +352,10 @@ class PgVectorStore:
 
     @staticmethod
     def _permission_clause(department: str):
-        return or_(
-            KnowledgeChunk.department == department,
-            and_(
-                KnowledgeChunk.is_shared.is_(True),
-                or_(
-                    KnowledgeChunk.shared_departments.is_(None),
-                    KnowledgeChunk.shared_departments == "",
-                    sa_text(
-                        ":dept = ANY(string_to_array(shared_departments, ','))"
-                    ).bindparams(dept=department),
-                ),
-            ),
-        )
+        # 实现统一在 rag/permission.py：那里同一份条件还会被 do_orm_execute 事件
+        # 挂到所有 KnowledgeChunk 查询上（防漏写），两处必须是同一个函数，否则会出现
+        # "显式调用放行的行、强制注入又挡住"的矛盾
+        return permission_clause(department)
 
     async def _graph_channel(self, query: str, department: str | None) -> tuple[list[dict], list[dict]]:
         """图通道：实体链接 → 多跳扩展 → 候选 chunk。返回 (hits, linked_entities)。

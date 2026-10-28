@@ -20,6 +20,7 @@ setup_logging()
 
 from config.settings import validate_settings
 from config.security_headers import SecurityHeadersMiddleware
+from rag.permission import PermissionContextMiddleware
 from services.memory import close_memory_runtime, init_memory_runtime
 from services.object_storage import object_storage
 
@@ -55,6 +56,8 @@ app = FastAPI(
 
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
+# 最后注册 = 最外层：权限上下文必须包住认证依赖，否则依赖里绑定的部门不会被清理
+app.add_middleware(PermissionContextMiddleware)
 
 app.include_router(auth_router)
 app.include_router(admin_router)

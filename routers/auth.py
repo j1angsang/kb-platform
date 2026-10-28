@@ -11,6 +11,8 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from config.db_conf import get_db
 from config.departments import UNASSIGNED
 from config.logging_conf import bind_user_id
+from rag.permission import bind_enforced_department
+from services.permissions import can_view_all_departments
 from config.rate_limit import check_or_429, client_ip, make_limiter
 from crud import ops_audit as crud_ops_audit
 from models.user import User
@@ -67,6 +69,9 @@ async def get_current_user(credentials:HTTPAuthorizationCredentials = Depends(se
     if not user.is_active:
         raise HTTPException(status_code=401, detail="账号已停用")
     bind_user_id(user.id)
+    # 绑定到 ORM 强制注入的权限上下文：admin/leader 可见全部部门，其余按本部门过滤。
+    # 部门为空时必须落 None（= 不限制）而不是空串，否则会变成"谁都看不到"
+    bind_enforced_department(None if can_view_all_departments(user) else (user.department or None))
     return user
 
 

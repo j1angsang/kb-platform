@@ -6,7 +6,7 @@
 
 | 配置 | 多跳/聚合 Recall@k | 对照题 Recall@k | MRR | avg_noise | 拒答率 | graph_only_rate | 图独占进选中 | P95 ms |
 |---|---|---|---|---|---|---|---|---|
-| graph_off | 1.0 | 1.0 | 0.775 | 0.2917 | 1.0 | 0.0 | 0 | 1387.26 |
-| graph_on | 1.0 | 1.0 | 0.775 | 0.2917 | 1.0 | 0.0 | 0 | 296.35 |
+| graph_off | 1.0 | None | 0.9444 | 0.0926 | None | 0.0 | 0 | 2619.75 |
+| graph_on | 1.0 | None | 0.9444 | 0.0926 | None | 0.0 | 0 | 350.94 |
 
 > 复跑：`.venv\Scripts\python.exe eval\run_graph.py --graph both`

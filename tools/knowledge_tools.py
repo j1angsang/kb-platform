@@ -9,7 +9,7 @@ from sqlalchemy import or_, select
 from config.db_conf import AsyncSessionLocal
 from crud.file import shared_departments_clause
 from models import FileInfo, KnowledgeDoc
-from rag.store import select_relevant_hits, store
+from rag.store import SEARCH_WEAK_MIN, select_relevant_hits, store
 from services.prompt_guard import (
     INJECTION_INSTRUCTION,
     scan_injection,
@@ -159,4 +159,54 @@ async def check_doc_status(
     )
 
 
-TOOLS = [search_knowledge, list_department_docs, check_doc_status]
+@tool(parse_docstring=True)
+async def retry_search(query: str, state: Annotated[dict, InjectedState]) -> str:
+    """首轮检索没结果时，换一种说法再检索一次知识库。
+
+    只在首轮返回"未检索到相关内容"、或资料明显答不上问题时使用，一次对话最多用一次。
+    改写方式：把口语换成文档里的正式说法（"年假能攒着吗" → "年假 跨年累计"），
+    或去掉无关修饰。不要用它重复同一个问法。
+
+    Args:
+        query: 改写后的检索词，必须与原问法用词不同。
+    """
+    user_department = state["user_department"]
+    allow_all = state.get("allow_all_departments", False)
+    department = None if allow_all else user_department
+
+    hits, _ = await store.search(query, department=department, top_k=5, return_meta=True)
+    selected = select_relevant_hits(hits, top_k=2)
+    relaxed = False
+    if not selected:
+        # 重试必须放宽：首轮已经用严格门控筛过，再严格一次等于没重试。
+        # 但只放宽到弱相关下限，并且明确告诉模型"这是接近、不一定答得上"。
+        candidates = [
+            h for h in hits
+            if h.get("rerank_score") is not None and h["rerank_score"] >= SEARCH_WEAK_MIN
+        ]
+        if candidates:
+            candidates.sort(key=lambda h: h["rerank_score"], reverse=True)
+            selected = candidates[:2]
+            relaxed = True
+    if not selected:
+        return "换说法后仍未检索到相关内容。请如实告知用户无法从知识库确认，不要编造。"
+
+    lines = []
+    for i, h in enumerate(selected, 1):
+        src = h.get("filename") or "knowledge"
+        lines.append(wrap_untrusted(f"[{src}] {h['text']}", index=i, source=src))
+    prefix = ""
+    if relaxed:
+        prefix = (
+            "【放宽匹配】以下是降低标准后找到的最接近资料，不保证能直接回答问题。"
+            "如果只能部分回答，请说明它讲的是哪一部分、哪一部分查不到；"
+            "禁止断言「知识库里没有相关政策」。\n"
+        )
+    logger.info(
+        "knowledge_tools.retry_search query=%s department=%s selected=%d relaxed=%s",
+        query[:40], department or "-all-", len(selected), relaxed,
+    )
+    return INJECTION_INSTRUCTION + "\n" + prefix + "检索结果：\n" + wrap_knowledge(lines)
+
+
+TOOLS = [search_knowledge, retry_search, list_department_docs, check_doc_status]

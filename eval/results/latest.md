@@ -6,9 +6,9 @@
 
 | 配置 | 知识题 Recall@k | 知识题 MRR | 字面题 Recall@k | 字面题 MRR | 无答案拒绝率 | P95 ms |
 |---|---|---|---|---|---|---|
-| weighted_rerank_off | 1.0 | 1.0 | 1.0 | 1.0 | 0.0 | 203.26 |
-| weighted_rerank_on | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1252.63 |
-| rrf_rerank_off | 1.0 | 1.0 | 1.0 | 1.0 | 0.0 | 18.44 |
-| rrf_rerank_on | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 376.63 |
+| weighted_rerank_off | 0.875 | 0.875 | 1.0 | 1.0 | 0.0 | 1501.1 |
+| weighted_rerank_on | 1.0 | 0.9375 | 1.0 | 1.0 | 1.0 | 254.48 |
+| rrf_rerank_off | 1.0 | 0.9375 | 1.0 | 0.9375 | 0.0 | 23.36 |
+| rrf_rerank_on | 1.0 | 0.9375 | 1.0 | 1.0 | 1.0 | 261.4 |
 
 > 复跑：`.venv\Scripts\python.exe eval\run_retrieval.py --fusion both --rerank both`
